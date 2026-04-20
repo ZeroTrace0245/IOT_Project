@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "IOT APP (Package)": {
+      "commandName": "MsixPackage"
+    },
+    "IOT APP (Unpackaged)": {
+      "commandName": "Project"
+    }
+  }
+}
