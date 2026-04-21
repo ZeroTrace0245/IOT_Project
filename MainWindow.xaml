@@ -25,6 +25,27 @@
             <StackPanel Padding="25" Spacing="25">
                 <TextBlock Text="Smart Foot" Style="{StaticResource TitleTextBlockStyle}" FontSize="28" FontWeight="SemiLight" />
 
+                <StackPanel Spacing="5">
+                    <Button Click="NavButton_Click" Tag="Dashboard" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Background="Transparent" BorderThickness="0">
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <SymbolIcon Symbol="FourBars" />
+                            <TextBlock Text="Dashboard"/>
+                        </StackPanel>
+                    </Button>
+                    <Button Click="NavButton_Click" Tag="Cashier" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Background="Transparent" BorderThickness="0">
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <SymbolIcon Symbol="Library" />
+                            <TextBlock Text="Cashier View"/>
+                        </StackPanel>
+                    </Button>
+                    <Button Click="NavButton_Click" Tag="Custom" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Background="Transparent" BorderThickness="0">
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <SymbolIcon Symbol="Edit" />
+                            <TextBlock Text="Custom Design"/>
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
+
                 <StackPanel Spacing="10">
                     <TextBlock Text="Connection" Style="{StaticResource BodyStrongTextBlockStyle}" />
                     <StackPanel Orientation="Horizontal" Spacing="8">
@@ -49,8 +70,9 @@
         </Border>
 
         <!-- Main Content Area -->
-        <ScrollViewer Grid.Column="1">
-            <StackPanel Padding="40" Spacing="30">
+        <Grid Grid.Column="1">
+            <ScrollViewer x:Name="DashboardPanel" Visibility="Visible">
+                <StackPanel Padding="40" Spacing="30">
 
                 <TextBlock Text="Analytics Overview" Style="{StaticResource TitleTextBlockStyle}" FontWeight="SemiLight" />
 
@@ -73,6 +95,16 @@
                                 <StackPanel Orientation="Horizontal" Spacing="24">
                                     <RadioButton x:Name="CWButton" Content="Clockwise" IsChecked="True"/>
                                     <RadioButton x:Name="CCWButton" Content="Counter-CW"/>
+                                </StackPanel>
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal" Spacing="15" Margin="0,5,0,0">
+                                <StackPanel>
+                                    <TextBlock Text="Est. Time (10cm)" FontSize="10" Foreground="Gray"/>
+                                    <TextBlock x:Name="EstTimeLabel" Text="12.5s" FontSize="14" FontWeight="SemiBold"/>
+                                </StackPanel>
+                                <StackPanel>
+                                    <TextBlock Text="Resolution" FontSize="10" Foreground="Gray"/>
+                                    <TextBlock Text="0.04mm" FontSize="14" FontWeight="SemiBold"/>
                                 </StackPanel>
                             </StackPanel>
                             <Button x:Name="StartButton" Content="Apply &amp; Run" Click="StartButton_Click" HorizontalAlignment="Stretch" Style="{StaticResource AccentButtonStyle}" Padding="0,10"/>
@@ -124,8 +156,102 @@
                         </Grid>
                     </Border>
 
+                    <!-- Shop Recommendation Card (QR Code) -->
+                    <Border x:Name="ShopCard" Grid.Row="1" Grid.ColumnSpan="2" Visibility="Collapsed" Background="{ThemeResource SystemControlBackgroundAltHighBrush}" Padding="24" CornerRadius="12" BorderThickness="1" BorderBrush="{ThemeResource SystemControlForegroundBaseLowBrush}" Margin="0,180,0,0">
+                        <Grid ColumnDefinitions="*, 200">
+                            <StackPanel Spacing="15">
+                                <TextBlock Text="Available at Nearby Stores" Style="{StaticResource SubtitleTextBlockStyle}" />
+                                <TextBlock Text="Scan the QR code to find these shoes at authorized retailers in Pettah and Colombo. Special discounts available via Smart Foot app." TextWrapping="Wrap" Foreground="Gray" />
+                                <Button Content="Open Store Map" HorizontalAlignment="Left" Style="{StaticResource AccentButtonStyle}"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="1" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="10">
+                                <Border Background="White" Padding="10" CornerRadius="8">
+                                    <Image Source="https://api.qrserver.com/v1/create-qr-code/?size=150x150&amp;data=https://github.com/ZeroTrace0245/IOT_Project" Width="150" Height="150" Stretch="Uniform"/>
+                                </Border>
+                                <TextBlock Text="SCAN TO SHOP" HorizontalAlignment="Center" FontSize="10" FontWeight="Bold" Foreground="{ThemeResource SystemControlForegroundAccentBrush}"/>
+                            </StackPanel>
+                        </Grid>
+                    </Border>
                 </Grid>
             </StackPanel>
         </ScrollViewer>
+
+            <!-- Cashier View -->
+            <ScrollViewer x:Name="CashierPanel" Visibility="Collapsed">
+                <StackPanel Padding="40" Spacing="30">
+                    <TextBlock Text="Cashier Operations" Style="{StaticResource TitleTextBlockStyle}" FontWeight="SemiLight" />
+                    <Border Background="{ThemeResource SystemControlBackgroundAltHighBrush}" Padding="24" CornerRadius="12" BorderThickness="1" BorderBrush="{ThemeResource SystemControlForegroundBaseLowBrush}">
+                        <StackPanel Spacing="20">
+                            <TextBlock Text="Store Inventory &amp; Costing" Style="{StaticResource SubtitleTextBlockStyle}" />
+                            <ListView ItemsSource="{x:Bind Inventory}" Margin="0,10">
+                                <ListView.ItemTemplate>
+                                    <DataTemplate x:DataType="local:InventoryItem">
+                                        <Grid Padding="12" BorderThickness="0,0,0,1" BorderBrush="{ThemeResource SystemControlForegroundBaseLowBrush}">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="100"/>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="120"/>
+                                                <ColumnDefinition Width="60"/>
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Text="{x:Bind SKU}" VerticalAlignment="Center" FontSize="12" Foreground="Gray"/>
+                                            <TextBlock Grid.Column="1" Text="{x:Bind Model}" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                                            <TextBlock Grid.Column="2" Text="{x:Bind Price}" VerticalAlignment="Center" Foreground="{ThemeResource SystemControlForegroundAccentBrush}"/>
+                                            <TextBlock Grid.Column="3" Text="{x:Bind Stock}" VerticalAlignment="Center" HorizontalAlignment="Right"/>
+                                        </Grid>
+                                    </DataTemplate>
+                                </ListView.ItemTemplate>
+                            </ListView>
+
+                            <Border Background="{ThemeResource SystemControlBackgroundAccentBrush}" Opacity="0.05" Padding="20" CornerRadius="8">
+                                <StackPanel Orientation="Horizontal" Spacing="20">
+                                    <Border Background="White" Padding="8" CornerRadius="4" VerticalAlignment="Center">
+                                        <Image Source="https://api.qrserver.com/v1/create-qr-code/?size=120x120&amp;data=AUTH_CASHIER_QR" Width="100" Height="100"/>
+                                    </Border>
+                                    <StackPanel VerticalAlignment="Center" Spacing="5">
+                                        <TextBlock Text="Cashier Authentication" FontWeight="Bold"/>
+                                        <TextBlock Text="Scan to finalize sales and link foot scan data to receipt." Foreground="Gray" FontSize="12" TextWrapping="Wrap"/>
+                                    </StackPanel>
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </ScrollViewer>
+
+            <!-- Custom Shoe Design View -->
+            <ScrollViewer x:Name="CustomPanel" Visibility="Collapsed">
+                <StackPanel Padding="40" Spacing="30">
+                    <TextBlock Text="Bespoke Customizer" Style="{StaticResource TitleTextBlockStyle}" FontWeight="SemiLight" />
+                    <Grid ColumnDefinitions="*, 1.8*" ColumnSpacing="25">
+                        <Border Background="{ThemeResource SystemControlBackgroundAltHighBrush}" Padding="24" CornerRadius="12" BorderThickness="1" BorderBrush="{ThemeResource SystemControlForegroundBaseLowBrush}">
+                            <StackPanel Spacing="20">
+                                <TextBlock Text="Custom Fit Options" Style="{StaticResource SubtitleTextBlockStyle}" />
+                                <StackPanel Spacing="8">
+                                    <TextBlock Text="Shock Absorption Level" FontSize="12"/>
+                                    <Slider Minimum="0" Maximum="100" Value="60"/>
+                                </StackPanel>
+                                <StackPanel Spacing="8">
+                                    <TextBlock Text="Upper Mesh Style" FontSize="12"/>
+                                    <ComboBox HorizontalAlignment="Stretch" SelectedIndex="0">
+                                        <ComboBoxItem Content="Ultra-Breathable"/>
+                                        <ComboBoxItem Content="Water Resistant"/>
+                                        <ComboBoxItem Content="Reinforced Leather"/>
+                                    </ComboBox>
+                                </StackPanel>
+                                <Button Content="Preview 3D Mesh" HorizontalAlignment="Stretch" Style="{StaticResource AccentButtonStyle}" Padding="0,10"/>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Grid.Column="1" Background="{ThemeResource SystemControlBackgroundAltHighBrush}" Padding="24" CornerRadius="12" BorderThickness="1" BorderBrush="{ThemeResource SystemControlForegroundBaseLowBrush}">
+                            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Spacing="20">
+                                <SymbolIcon Symbol="Placeholder" Foreground="Gray"/>
+                                <TextBlock Text="Interactive Fit Visualizer" Foreground="Gray" TextAlignment="Center"/>
+                                <TextBlock Text="Based on measurements: 265mm" FontSize="11" Foreground="{ThemeResource SystemControlForegroundAccentBrush}" Opacity="0.5"/>
+                            </StackPanel>
+                        </Border>
+                    </Grid>
+                </StackPanel>
+            </ScrollViewer>
+        </Grid>
     </Grid>
 </Window>
