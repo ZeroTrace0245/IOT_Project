@@ -1,0 +1,181 @@
+# Quick Reference Card - TMC2209 Verification
+
+## 🎯 TL;DR (Too Long; Didn't Read)
+
+**How to verify your TMC2209 driver is working:**
+
+```
+1. Connect all wires (see diagram below)
+2. Upload: Arduino/DriverDiagnostics.ino
+3. Open Serial Monitor (9600 baud)
+4. Watch tests run (30 seconds)
+5. Result: All ✓ = Driver works! 🎉
+```
+
+---
+
+## 🔌 Wiring Quick Reference
+
+```
+ARDUINO UNO → TMC2209 DRIVER → MOTOR
+  Pin 3 (STEP) → STEP
+  Pin 4 (DIR)  → DIR
+  Pin 5 (EN)   → EN
+  Pin 2 (SW)   → LIMIT_SWITCH
+  A0 (SENSOR)  → PRESSURE_SENSOR
+  GND          → GND
+
+MOTOR (4 wires):
+  Black → 1A
+  Green → 1B
+  Red   → 2A
+  Blue  → 2B
+
+POWER:
+  12V   → VM
+  GND   → GND
+  100µF Capacitor: (+) VM, (-) GND [CRITICAL!]
+```
+
+---
+
+## ✅ Success Signs
+
+| Component | Should | Check |
+|-----------|--------|-------|
+| Green LED | Light up | When EN=LOW |
+| Motor shaft | Lock/Stiff | When EN=LOW |
+| Motor rotation | Smooth | When stepping |
+| Limit switch | Change state | When pressed |
+| Pressure sensor | 0-1023 range | With/without pressure |
+
+---
+
+## 📋 Test Sequence
+
+```
+Upload DriverDiagnostics.ino
+		 ↓
+Open Serial Monitor (9600 baud)
+		 ↓
+Test 1: Motor Enable       (5 sec)
+Test 2: Direction Control  (5 sec)
+Test 3: Step Signal        (5 sec)
+Test 4: Limit Switch       (5 sec)
+Test 5: Pressure Sensor    (5 sec)
+Test 6: Full Rotation      (5 sec)
+		 ↓
+All Pass ✓ → Driver works!
+Any Fail ✗ → Check wiring
+```
+
+---
+
+## 🔧 Quick Troubleshooting
+
+| Problem | Check |
+|---------|-------|
+| No LED | Power, GND, capacitor |
+| No movement | Pin 3, EN pin, motor wires |
+| Motor vibrates | Swap RED↔BLUE or BLACK↔GREEN |
+| No limit switch | Pin 2, switch wires |
+| Sensor shows 0/1023 | A0, sensor power/GND |
+| No serial output | COM port, 9600 baud |
+
+---
+
+## 📊 What You'll See
+
+```
+✓ Green LED lights
+✓ Motor shaft locks
+✓ Motor rotates ~1/4 turn (50 steps)
+✓ Motor completes full 360° rotation
+✓ Limit switch detects press
+✓ Pressure sensor reads 0-1023
+✓ All tests pass without errors
+```
+
+---
+
+## 🚀 After Tests Pass
+
+```
+1. Upload: Arduino/FootScanner.ino
+2. Open: WinUI Dashboard
+3. Select: COM port (9600 baud)
+4. Click: Measure
+5. Verify: FOOT= readings appear
+6. Success: System working! 🎉
+```
+
+---
+
+## 📁 File Locations
+
+```
+Arduino/
+  ├─ DriverDiagnostics.ino      ← Upload this first
+  ├─ QuickDriverTest.ino        ← For manual testing
+  └─ FootScanner.ino            ← Upload after verification
+
+Guides/
+  ├─ README_DRIVER_IDENTIFICATION.md     ← Master guide
+  ├─ QUICK_VERIFICATION_GUIDE.md         ← START HERE
+  ├─ WIRING_VERIFICATION_CHECKLIST.md    ← Diagrams
+  └─ DRIVER_TESTING_GUIDE.md            ← Troubleshooting
+```
+
+---
+
+## 💡 Pro Tips
+
+1. **Check capacitor first** - If LED doesn't light, it's usually missing
+2. **Motor vibration = wrong coils** - Swap RED↔BLUE and retry
+3. **No movement = enable issue** - Verify EN pin LOW when testing
+4. **Use QuickDriverTest.ino** - For live debugging one component at a time
+5. **Take a photo** - Of your wiring to compare with guides
+
+---
+
+## ✨ Verification Complete When:
+
+- [x] Green LED lights when enabled
+- [x] Motor locks when enabled  
+- [x] Motor rotates both directions
+- [x] Limit switch detects press
+- [x] Pressure sensor reads values
+- [x] All 6 tests pass
+- [x] No error messages in Serial Monitor
+
+**ALL ✓ = Your driver is working!** 🎉
+
+---
+
+## 🎯 Commands in QuickDriverTest.ino
+
+```
+1 = Enable motor (motor locks)
+2 = Disable motor (motor spins freely)
+3 = Step 20 times forward
+4 = Read pressure sensor
+5 = Read limit switch
+6 = Full rotation forward+reverse
+```
+
+Just type the number in Serial Monitor!
+
+---
+
+## 📞 Still Not Working?
+
+1. Read: **DRIVER_TESTING_GUIDE.md** (complete troubleshooting)
+2. Check: **WIRING_VERIFICATION_CHECKLIST.md** (pin diagrams)
+3. Use: **QuickDriverTest.ino** (manual step-by-step)
+4. Verify: All wiring matches checklist exactly
+
+---
+
+**That's it! You're ready to verify your TMC2209 driver.** 🚀
+
+Print this card or keep it handy while testing! ✌️

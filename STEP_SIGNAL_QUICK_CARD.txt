@@ -1,0 +1,315 @@
+# ⚙️ STEP SIGNAL TESTING - QUICK REFERENCE (PIN 3)
+
+```
+╔════════════════════════════════════════════════════════════════════════════╗
+║                    STEPPER MOTOR ON PIN 3 - QUICK START                   ║
+╚════════════════════════════════════════════════════════════════════════════╝
+```
+
+## WIRING (30 seconds)
+```
+Stepper Driver
+  ├─ STEP → Arduino Pin 3
+  └─ Ground → Arduino GND
+```
+
+---
+
+## WHAT IS A STEP SIGNAL?
+
+```
+A short pulse (2 microseconds) that tells the stepper driver:
+"Move the motor ONE STEP"
+
+Each step = 1.8° rotation (200-step motor)
+50 steps = 90° (quarter turn)
+100 steps = 180° (half turn)
+200 steps = 360° (full turn)
+```
+
+---
+
+## FASTEST TEST (5 minutes)
+```
+WinUI App → Driver Testing → Scroll to "Step Signal Monitor"
+Click buttons: "10 Slow" → "50 Medium" → "100 Fast" → "200 Full Rev"
+```
+
+✓ Motor should rotate incrementally
+✓ Each preset shows different speeds
+✓ Full 360° at "200 Full Rev"
+
+---
+
+## QUICK COMPARISON
+
+| Option | Time | Control | Best For |
+|--------|------|---------|----------|
+| Presets | 5 min | None | Quick verification |
+| Custom | 10 min | Full | Precise control |
+| Arduino | Continuous | None | Raw data |
+
+---
+
+## TEST PROCEDURE (10 minutes)
+
+1. **SETUP**
+   ```
+   ☐ Stepper wired to Pin 3 + GND
+   ☐ Driver powered
+   ☐ Arduino connected via USB
+   ☐ WinUI app running
+   ☐ COM port selected & connected
+   ```
+
+2. **TEST EACH PRESET**
+   ```
+   ☐ Click "10 Slow" → Motor rotates 18°
+   ☐ Click "50 Medium" → Motor rotates 90°
+   ☐ Click "100 Fast" → Motor rotates 180°
+   ☐ Click "200 Full Rev" → Motor rotates 360°
+   ```
+
+3. **VERIFY**
+   ```
+   ☐ Each click produces rotation? ✓
+   ☐ Rotation angle looks correct? ✓
+   ☐ No skipped steps? ✓
+   ☐ Smooth motion? ✓
+   ```
+
+---
+
+## WHAT TO EXPECT
+
+### At Each Speed
+
+```
+10 Slow:       Motor rotates slowly (18°)
+			   You hear individual stepping sounds
+			   Good for: Verification
+
+50 Medium:     Motor rotates 90° (quarter turn)
+			   Stepping sounds blend together
+			   Good for: Normal operation
+
+100 Fast:      Motor rotates 180° (half turn)
+			   Continuous buzzing sound
+			   Good for: Performance testing
+
+200 Full Rev:  Motor completes full 360° rotation
+			   Returns to starting position
+			   Good for: Full capability test
+```
+
+---
+
+## STEP COUNT CALCULATOR
+
+```
+For 200-step stepper motors:
+1.8° per step
+
+90° turn:   90 ÷ 1.8 = 50 steps
+45° turn:   45 ÷ 1.8 = 25 steps
+30° turn:   30 ÷ 1.8 = 17 steps
+180° turn:  180 ÷ 1.8 = 100 steps
+360° turn:  360 ÷ 1.8 = 200 steps
+```
+
+---
+
+## SPEED REFERENCE
+
+```
+Delay Between Pulses:
+
+1ms   → ~1000 steps/sec  (Very Fast)
+5ms   → ~200 steps/sec   (Fast)
+10ms  → ~100 steps/sec   (Normal)
+50ms  → ~20 steps/sec    (Slow)
+100ms → ~10 steps/sec    (Very Slow)
+```
+
+---
+
+## TROUBLESHOOTING IN 30 SECONDS
+
+| Issue | Check | Fix |
+|-------|-------|-----|
+| No motion | Wiring, power | Verify connections, check driver power |
+| Skipped steps | Too fast | Slow down, increase delay |
+| Inconsistent | Timing issue | Reduce speed, check pulse width |
+| Wrong direction | DIR pin polarity | Swap direction signal |
+| No serial data | COM port | Select correct port in app |
+
+---
+
+## SUCCESS CHECKLIST ✅
+
+```
+☐ 10 steps = 18° rotation
+☐ 50 steps = 90° rotation
+☐ 100 steps = 180° rotation
+☐ 200 steps = 360° rotation
+☐ Each step audible at slow speed
+☐ Smooth motion at fast speeds
+☐ No skipped steps
+☐ Pulse log shows commands
+☐ Consistent performance
+☐ All tests pass
+```
+
+If ALL checked: ✅ STEPPER IS WORKING!
+
+---
+
+## PIN SPECIFICATIONS
+
+```
+╔══════════════════════════════════════════════════════════════╗
+║ Pin 3 Step Signal Configuration                              ║
+╠══════════════════════════════════════════════════════════════╣
+║ Type:         Digital Output                                 ║
+║ Pulse Width:  2 microseconds                                 ║
+║ Logic High:   5V                                             ║
+║ Logic Low:    0V (GND)                                       ║
+║ Max Freq:     ~10kHz (100,000 steps/sec theoretical)         ║
+║ Practical Max: ~1kHz (1,000 steps/sec)                      ║
+║ Range:        1-200+ steps per command                       ║
+╚══════════════════════════════════════════════════════════════╝
+```
+
+---
+
+## VISUAL STATE INDICATOR GUIDE
+
+```
+				Current Status            Indicator
+					 │                        │
+					 ▼                        ▼
+			  No pulses being sent         ⏸️ IDLE
+			  Steps in progress           ⚙️ STEPPING
+			  Steps finished              ✅ COMPLETE
+```
+
+---
+
+## PRESET BUTTONS EXPLAINED
+
+```
+Button          Steps  Angle    Duration    Use For
+───────────────────────────────────────────────────
+10 Slow         10     18°      ~1 sec      Testing
+50 Medium       50     90°      ~5 sec      Quarter turn
+100 Fast        100    180°     ~10 sec     Half turn
+200 Full Rev    200    360°     ~20 sec     Full rotation
+
+At 10Hz stepping frequency (100ms between steps)
+```
+
+---
+
+## COMMANDS REFERENCE
+
+```
+FROM SERIAL CONSOLE:
+STEP_PULSE=10       → 10 step pulses (18°)
+STEP_PULSE=50       → 50 step pulses (90°)
+STEP_PULSE=100      → 100 step pulses (180°)
+STEP_PULSE=200      → 200 step pulses (360°)
+```
+
+---
+
+## NEXT STEPS
+
+1. **CHOOSE METHOD**
+   - First time? → Use presets (Quick)
+   - Custom? → Use sliders (Advanced)
+
+2. **CONNECT & RUN**
+   - Plug in Arduino
+   - Open app
+   - Select COM port
+   - Click a preset button
+
+3. **VERIFY RESULTS**
+   - All steps produce rotation? → ✅ SUCCESS
+   - Any issues? → Check troubleshooting
+
+4. **DOCUMENT**
+   - Note which speeds work
+   - Screenshot successful test
+   - Save activity log if needed
+
+---
+
+## PHONE NUMBER FOR QUICK REFERENCE
+
+**Your Stepper Pin**: **3**  
+**Your Ground Connection**: **GND**  
+**Expected Min Steps**: **1** (smallest movement)  
+**Expected Max Steps**: **200+** (multiple rotations)  
+**Test Time**: **10 minutes**  
+
+---
+
+## COMMON STEPPER PATTERNS
+
+### Pattern 1: Slow Stepping (Verification)
+```
+Send: 10 steps
+Wait: 1 second
+Send: 10 steps
+Wait: 1 second
+Repeat: 5 times
+
+Total: 50 steps = 90° rotation
+Good for: Testing step-by-step movement
+```
+
+### Pattern 2: Smooth Rotation
+```
+Send: 200 steps (with 10ms delay)
+Wait: 2 seconds
+Send: 200 steps (with 10ms delay)
+Repeat: 3 times
+
+Total: 600 steps = full rotation + extra
+Good for: Continuous smooth motion
+```
+
+### Pattern 3: Precise Positioning
+```
+Send: 17 steps (30.6° angle)
+Wait: 5 seconds
+Send: 17 steps
+Wait: 5 seconds
+Repeat: 10 times
+
+Total: 170 steps = precise incremental positioning
+Good for: Fine angle control
+```
+
+---
+
+```
+╔════════════════════════════════════════════════════════════════════════════╗
+║                                                                            ║
+║  ⚙️ STEP SIGNAL TESTING SETUP COMPLETE AND READY TO USE                  ║
+║                                                                            ║
+║  → Start with preset buttons (best experience)                           ║
+║  → Takes only 10 minutes to complete                                      ║
+║  → Real-time feedback and control                                         ║
+║                                                                            ║
+╚════════════════════════════════════════════════════════════════════════════╝
+```
+
+---
+
+**Version**: 1.0  
+**Status**: ✅ Ready  
+**Last Updated**: December 2024  
+**Hardware**: Arduino Uno + Pin 3 Stepper  
+**Software**: WinUI Smart Footwear Dashboard

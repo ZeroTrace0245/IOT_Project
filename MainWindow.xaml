@@ -44,6 +44,30 @@
                             <TextBlock Text="Custom Design"/>
                         </StackPanel>
                     </Button>
+                    <Button Click="NavButton_Click" Tag="DriverTest" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Background="Transparent" BorderThickness="0">
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <FontIcon Glyph="&#xE90F;" />
+                            <TextBlock Text="Driver Testing"/>
+                        </StackPanel>
+                    </Button>
+                    <Button Click="NavButton_Click" Tag="SensorDetection" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Background="Transparent" BorderThickness="0">
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <FontIcon Glyph="&#xE72C;" />
+                            <TextBlock Text="Sensor Detection"/>
+                        </StackPanel>
+                    </Button>
+                    <Button Click="NavButton_Click" Tag="ArduinoControl" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Background="Transparent" BorderThickness="0">
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <FontIcon Glyph="&#xE74B;" />
+                            <TextBlock Text="Arduino Control"/>
+                        </StackPanel>
+                    </Button>
+                    <Button Click="NavButton_Click" Tag="SerialConsole" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Background="Transparent" BorderThickness="0">
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <FontIcon Glyph="&#xE738;" />
+                            <TextBlock Text="Serial Console"/>
+                        </StackPanel>
+                    </Button>
                 </StackPanel>
 
                 <StackPanel Spacing="10">
@@ -250,6 +274,971 @@
                             </StackPanel>
                         </Border>
                     </Grid>
+                </StackPanel>
+            </ScrollViewer>
+
+            <!-- Driver Testing View -->
+            <ScrollViewer x:Name="DriverTestPanel" Visibility="Collapsed">
+                <StackPanel Padding="40" Spacing="30">
+                    <TextBlock Text="TMC2209 Driver Testing &amp; Diagnostics" Style="{StaticResource TitleTextBlockStyle}" FontWeight="SemiLight" />
+
+                    <Grid ColumnDefinitions="420, *" ColumnSpacing="25">
+                        <!-- Test Controls Panel -->
+                        <Border Background="{ThemeResource SystemControlBackgroundAltHighBrush}" Padding="24" CornerRadius="12" BorderThickness="1" BorderBrush="{ThemeResource SystemControlForegroundBaseLowBrush}">
+                            <StackPanel Spacing="20">
+                                <TextBlock Text="Test Selection" Style="{StaticResource SubtitleTextBlockStyle}" />
+
+                                <StackPanel Spacing="8">
+                                    <TextBlock Text="Select a test to run:" FontSize="12" Foreground="Gray"/>
+                                    <ComboBox x:Name="DriverTestComboBox" HorizontalAlignment="Stretch" SelectedIndex="0">
+                                        <ComboBoxItem Content="1. Motor Enable/Disable"/>
+                                        <ComboBoxItem Content="2. Direction Control"/>
+                                        <ComboBoxItem Content="3. Step Signal"/>
+                                        <ComboBoxItem Content="4. Limit Switch"/>
+                                        <ComboBoxItem Content="5. Pressure Sensor"/>
+                                        <ComboBoxItem Content="6. Full Rotation"/>
+                                        <ComboBoxItem Content="7. Limit Switch Monitor"/>
+                                        <ComboBoxItem Content="8. Motor Speed Test (Pin 8)"/>
+                                        <ComboBoxItem Content="9. Motor Speed Monitor (Pin 8)"/>
+                                        <ComboBoxItem Content="10. Step Signal Monitor (Pin 3)"/>
+                                        <ComboBoxItem Content="Run All Tests"/>
+                                    </ComboBox>
+                                </StackPanel>
+
+                                <StackPanel Orientation="Horizontal" Spacing="10">
+                                    <Button x:Name="RunDriverTestButton" Content="▶ Run Test" Click="DriverTestButton_Click" HorizontalAlignment="Stretch" Style="{StaticResource AccentButtonStyle}" Padding="0,10" FlowDirection="LeftToRight"/>
+                                    <Button Content="✕ Clear" Click="ClearDriverTestOutput" HorizontalAlignment="Stretch" Padding="0,10"/>
+                                </StackPanel>
+
+                                <Border Background="{ThemeResource SystemControlBackgroundAccentBrush}" Opacity="0.1" Padding="16" CornerRadius="8">
+                                    <StackPanel Spacing="8">
+                                        <TextBlock Text="Quick Reference" Style="{StaticResource BodyStrongTextBlockStyle}" FontSize="12"/>
+                                        <TextBlock Text="✓ Test 1: Motor lock/free" FontSize="11" Foreground="Gray"/>
+                                                <TextBlock Text="✓ Test 2: DIR pin working" FontSize="11" Foreground="Gray"/>
+                                                <TextBlock Text="✓ Test 3: Step pulses" FontSize="11" Foreground="Gray"/>
+                                                <TextBlock Text="✓ Test 4: Limit switch" FontSize="11" Foreground="Gray"/>
+                                                <TextBlock Text="✓ Test 5: Pressure sensor" FontSize="11" Foreground="Gray"/>
+                                                <TextBlock Text="✓ Test 6: Full rotation" FontSize="11" Foreground="Gray"/>
+                                                <TextBlock Text="✓ Test 7: Limit monitor" FontSize="11" Foreground="Gray"/>
+                                                <TextBlock Text="✓ Test 8: Motor speed" FontSize="11" Foreground="Gray"/>
+                                                <TextBlock Text="✓ Test 9: Speed monitor" FontSize="11" Foreground="Gray"/>
+                                                <TextBlock Text="✓ Test 10: Step monitor" FontSize="11" Foreground="Gray"/>
+                                            </StackPanel>
+                                </Border>
+
+                                <Border Background="{ThemeResource SystemControlBackgroundAccentBrush}" Padding="16" CornerRadius="8" Opacity="0.15">
+                                    <StackPanel Spacing="8" VerticalAlignment="Center">
+                                        <TextBlock Text="Test Result:" Style="{StaticResource BodyStrongTextBlockStyle}" FontSize="11"/>
+                                        <TextBlock x:Name="DriverTestResultLabel" Text="Ready" Foreground="Gray" FontSize="18" FontWeight="Bold" TextAlignment="Center"/>
+                                    </StackPanel>
+                                </Border>
+
+                                <Border Background="{ThemeResource SystemControlForegroundBaseLowBrush}" Padding="12" CornerRadius="6" Opacity="0.3">
+                                    <StackPanel Spacing="4">
+                                        <TextBlock Text="ℹ Hardware Requirements:" FontSize="10" FontWeight="SemiBold"/>
+                                        <TextBlock Text="• Arduino Uno (COM port)" FontSize="9"/>
+                                        <TextBlock Text="• TMC2209 driver connected" FontSize="9"/>
+                                        <TextBlock Text="• NEMA 17 motor attached" FontSize="9"/>
+                                        <TextBlock Text="• 100µF capacitor on VM/GND" FontSize="9"/>
+                                    </StackPanel>
+                                </Border>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Test Output Panel -->
+                        <Border Grid.Column="1" Background="{ThemeResource SystemControlBackgroundAltHighBrush}" Padding="24" CornerRadius="12" BorderThickness="1" BorderBrush="{ThemeResource SystemControlForegroundBaseLowBrush}">
+                            <StackPanel Spacing="15">
+                                <TextBlock Text="Test Output &amp; Diagnostics" Style="{StaticResource SubtitleTextBlockStyle}" />
+                                <TextBox x:Name="DriverTestOutput" 
+                                    Height="450" 
+                                    IsReadOnly="True"
+                                    TextWrapping="Wrap"
+                                    AcceptsReturn="True"
+                                    Background="{ThemeResource SystemControlBackgroundBaseLowBrush}"
+                                    Foreground="White"
+                                    FontFamily="Consolas"
+                                    FontSize="11"
+                                    Padding="12"
+                                    Text="[Ready for testing...]&#x0a;&#x0a;Select a test from the left panel and click 'Run Test' to begin.&#x0a;&#x0a;Expected outputs:&#x0a;✓ Test 1: Motor locks when EN=LOW, spins when EN=HIGH&#x0a;✓ Test 2: Motor direction changes with DIR pin&#x0a;✓ Test 3: Motor rotates ~0.25 turn per 50 steps&#x0a;✓ Test 4: Limit switch state changes when pressed&#x0a;✓ Test 5: Pressure sensor reads 0-1023&#x0a;✓ Test 6: Motor completes full 360° rotation&#x0a;"/>
+                                <StackPanel Orientation="Horizontal" Spacing="10">
+                                    <Border Background="{ThemeResource SystemControlForegroundBaseLowBrush}" Padding="8" CornerRadius="4" Opacity="0.5">
+                                        <StackPanel Orientation="Horizontal" Spacing="8">
+                                            <FontIcon Glyph="&#xE946;" />
+                                            <TextBlock Text="All tests use serial communication at 9600 baud" FontSize="10" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                    </Border>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+                    </Grid>
+
+                    <!-- Test Details Reference -->
+                    <Border Background="{ThemeResource SystemControlBackgroundAltHighBrush}" Padding="24" CornerRadius="12" BorderThickness="1" BorderBrush="{ThemeResource SystemControlForegroundBaseLowBrush}">
+                        <StackPanel Spacing="15">
+                            <TextBlock Text="Test Descriptions &amp; Success Criteria" Style="{StaticResource SubtitleTextBlockStyle}" />
+                            <Grid ColumnDefinitions="*, *, *" ColumnSpacing="15" RowSpacing="15">
+                                <!-- Test 1 -->
+                                <Border Background="{ThemeResource SystemControlForegroundBaseLowBrush}" Padding="12" CornerRadius="8" Opacity="0.1">
+                                    <StackPanel Spacing="8">
+                                        <TextBlock Text="🔌 Test 1: Enable/Disable" FontWeight="Bold" FontSize="12"/>
+                                        <TextBlock Text="Checks if motor power delivery works" FontSize="10" TextWrapping="Wrap" Foreground="Gray"/>
+                                        <TextBlock Text="✓ Motor locks" FontSize="9" Foreground="{ThemeResource SystemControlForegroundAccentBrush}"/>
+                                        <TextBlock Text="✓ Green LED lights" FontSize="9" Foreground="{ThemeResource SystemControlForegroundAccentBrush}"/>
+                                    </StackPanel>
+                                </Border>
+
+                                <!-- Test 2 -->
+                                <Border Background="{ThemeResource SystemControlForegroundBaseLowBrush}" Padding="12" CornerRadius="8" Opacity="0.1">
+                                    <StackPanel Spacing="8">
+                                        <TextBlock Text="↔️ Test 2: Direction" FontWeight="Bold" FontSize="12"/>
+                                        <TextBlock Text="Checks if DIR pin controls motor direction" FontSize="10" TextWrapping="Wrap" Foreground="Gray"/>
+                                        <TextBlock Text="✓ Rotates forward" FontSize="9" Foreground="{ThemeResource SystemControlForegroundAccentBrush}"/>
+                                        <TextBlock Text="✓ Rotates reverse" FontSize="9" Foreground="{ThemeResource SystemControlForegroundAccentBrush}"/>
+                                    </StackPanel>
+                                </Border>
+
+                                <!-- Test 3 -->
+                                <Border Background="{ThemeResource SystemControlForegroundBaseLowBrush}" Padding="12" CornerRadius="8" Opacity="0.1">
+                                    <StackPanel Spacing="8">
+                                        <TextBlock Text="🔄 Test 3: Step Signal" FontWeight="Bold" FontSize="12"/>
+                                        <TextBlock Text="Checks if STEP pin creates motor movement" FontSize="10" TextWrapping="Wrap" Foreground="Gray"/>
+                                        <TextBlock Text="✓ 50 steps sent" FontSize="9" Foreground="{ThemeResource SystemControlForegroundAccentBrush}"/>
+                                        <TextBlock Text="✓ Motor rotates" FontSize="9" Foreground="{ThemeResource SystemControlForegroundAccentBrush}"/>
+                                    </StackPanel>
+                                </Border>
+
+                                <!-- Test 4 -->
+                                <Border Background="{ThemeResource SystemControlForegroundBaseLowBrush}" Padding="12" CornerRadius="8" Opacity="0.1">
+                                    <StackPanel Spacing="8">
+                                        <TextBlock Text="🔔 Test 4: Limit Switch" FontWeight="Bold" FontSize="12"/>
+                                        <TextBlock Text="Checks if home position sensor works" FontSize="10" TextWrapping="Wrap" Foreground="Gray"/>
+                                        <TextBlock Text="✓ Detects press" FontSize="9" Foreground="{ThemeResource SystemControlForegroundAccentBrush}"/>
+                                        <TextBlock Text="✓ State changes" FontSize="9" Foreground="{ThemeResource SystemControlForegroundAccentBrush}"/>
+                                    </StackPanel>
+                                </Border>
+
+                                <!-- Test 5 -->
+                                <Border Background="{ThemeResource SystemControlForegroundBaseLowBrush}" Padding="12" CornerRadius="8" Opacity="0.1">
+                                    <StackPanel Spacing="8">
+                                        <TextBlock Text="📊 Test 5: Pressure Sensor" FontWeight="Bold" FontSize="12"/>
+                                        <TextBlock Text="Checks if analog sensor reads values" FontSize="10" TextWrapping="Wrap" Foreground="Gray"/>
+                                        <TextBlock Text="✓ Range 0-1023" FontSize="9" Foreground="{ThemeResource SystemControlForegroundAccentBrush}"/>
+                                        <TextBlock Text="✓ Values change" FontSize="9" Foreground="{ThemeResource SystemControlForegroundAccentBrush}"/>
+                                    </StackPanel>
+                                </Border>
+
+                                <!-- Test 6 -->
+                                <Border Background="{ThemeResource SystemControlForegroundBaseLowBrush}" Padding="12" CornerRadius="8" Opacity="0.1">
+                                    <StackPanel Spacing="8">
+                                        <TextBlock Text="🎡 Test 6: Full Rotation" FontWeight="Bold" FontSize="12"/>
+                                        <TextBlock Text="Checks complete motor integration" FontSize="10" TextWrapping="Wrap" Foreground="Gray"/>
+                                        <TextBlock Text="✓ 360° rotation" FontSize="9" Foreground="{ThemeResource SystemControlForegroundAccentBrush}"/>
+                                        <TextBlock Text="✓ Returns to start" FontSize="9" Foreground="{ThemeResource SystemControlForegroundAccentBrush}"/>
+                                    </StackPanel>
+                                </Border>
+
+                                <!-- Test 7 -->
+                                <Border Background="{ThemeResource SystemControlForegroundBaseLowBrush}" Padding="12" CornerRadius="8" Opacity="0.1">
+                                    <StackPanel Spacing="8">
+                                        <TextBlock Text="📊 Test 7: Limit Switch Monitor" FontWeight="Bold" FontSize="12"/>
+                                        <TextBlock Text="Real-time limit switch monitoring on Pin 4" FontSize="10" TextWrapping="Wrap" Foreground="Gray"/>
+                                        <TextBlock Text="✓ Live state display" FontSize="9" Foreground="{ThemeResource SystemControlForegroundAccentBrush}"/>
+                                        <TextBlock Text="✓ Change detection" FontSize="9" Foreground="{ThemeResource SystemControlForegroundAccentBrush}"/>
+                                    </StackPanel>
+                                </Border>
+
+                                <!-- Test 8 -->
+                                <Border Background="{ThemeResource SystemControlForegroundBaseLowBrush}" Padding="12" CornerRadius="8" Opacity="0.1">
+                                    <StackPanel Spacing="8">
+                                        <TextBlock Text="⚡ Test 8: Motor Speed Test" FontWeight="Bold" FontSize="12"/>
+                                        <TextBlock Text="PWM speed control test on Pin 8" FontSize="10" TextWrapping="Wrap" Foreground="Gray"/>
+                                        <TextBlock Text="✓ Ramp speeds" FontSize="9" Foreground="{ThemeResource SystemControlForegroundAccentBrush}"/>
+                                        <TextBlock Text="✓ Fixed speeds" FontSize="9" Foreground="{ThemeResource SystemControlForegroundAccentBrush}"/>
+                                    </StackPanel>
+                                </Border>
+
+                                <!-- Test 9 -->
+                                <Border Background="{ThemeResource SystemControlForegroundBaseLowBrush}" Padding="12" CornerRadius="8" Opacity="0.1">
+                                    <StackPanel Spacing="8">
+                                        <TextBlock Text="📈 Test 9: Motor Speed Monitor" FontWeight="Bold" FontSize="12"/>
+                                        <TextBlock Text="Real-time PWM motor speed control" FontSize="10" TextWrapping="Wrap" Foreground="Gray"/>
+                                        <TextBlock Text="✓ Live speed slider" FontSize="9" Foreground="{ThemeResource SystemControlForegroundAccentBrush}"/>
+                                        <TextBlock Text="✓ Real-time feedback" FontSize="9" Foreground="{ThemeResource SystemControlForegroundAccentBrush}"/>
+                                    </StackPanel>
+                                </Border>
+
+                                <!-- Test 10 -->
+                                <Border Background="{ThemeResource SystemControlForegroundBaseLowBrush}" Padding="12" CornerRadius="8" Opacity="0.1">
+                                    <StackPanel Spacing="8">
+                                        <TextBlock Text="⚙️ Test 10: Step Signal Monitor" FontWeight="Bold" FontSize="12"/>
+                                        <TextBlock Text="Stepper motor pulse control on Pin 3" FontSize="10" TextWrapping="Wrap" Foreground="Gray"/>
+                                        <TextBlock Text="✓ Step counter" FontSize="9" Foreground="{ThemeResource SystemControlForegroundAccentBrush}"/>
+                                        <TextBlock Text="✓ Frequency control" FontSize="9" Foreground="{ThemeResource SystemControlForegroundAccentBrush}"/>
+                                    </StackPanel>
+                                </Border>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Motor Speed Monitor Panel -->
+                    <Border Background="{ThemeResource SystemControlBackgroundAltHighBrush}" Padding="24" CornerRadius="12" BorderThickness="1" BorderBrush="{ThemeResource SystemControlForegroundBaseLowBrush}">
+                        <StackPanel Spacing="20">
+                            <StackPanel Spacing="8">
+                                <TextBlock Text="⚡ Motor Speed Monitor - Pin 8 (PWM)" Style="{StaticResource SubtitleTextBlockStyle}" />
+                                <TextBlock Text="Real-time PWM motor speed control and monitoring. Use the slider to adjust motor speed from 0-255." FontSize="12" Foreground="Gray" TextWrapping="Wrap"/>
+                            </StackPanel>
+
+                            <!-- Speed Controls -->
+                            <StackPanel Spacing="15">
+                                <StackPanel Spacing="8">
+                                    <TextBlock Text="Motor Speed Control:" FontSize="12" FontWeight="SemiBold"/>
+                                    <Slider x:Name="MotorSpeedSlider" Minimum="0" Maximum="255" Value="0" StepFrequency="5" HorizontalAlignment="Stretch"/>
+                                    <StackPanel Orientation="Horizontal" Spacing="20">
+                                        <TextBlock x:Name="MotorSpeedValue" Text="Speed: 0 (0%)" FontSize="14" FontWeight="Bold" Foreground="{ThemeResource SystemControlForegroundAccentBrush}"/>
+                                        <Button x:Name="ApplyMotorSpeedButton" Content="Apply Speed" Click="ApplyMotorSpeed_Click" Style="{StaticResource AccentButtonStyle}" Padding="12,6"/>
+                                        <Button Content="Stop Motor" Click="StopMotor_Click" Padding="12,6"/>
+                                    </StackPanel>
+                                </StackPanel>
+                            </StackPanel>
+
+                            <!-- Speed Presets -->
+                            <StackPanel Spacing="8">
+                                <TextBlock Text="Quick Speed Presets:" FontSize="12" FontWeight="SemiBold"/>
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <Button Content="0% (Off)" Click="SetMotorSpeed_Click" Tag="0" Padding="10,6" FontSize="11"/>
+                                    <Button Content="25%" Click="SetMotorSpeed_Click" Tag="63" Padding="10,6" FontSize="11"/>
+                                    <Button Content="50%" Click="SetMotorSpeed_Click" Tag="127" Padding="10,6" FontSize="11"/>
+                                    <Button Content="75%" Click="SetMotorSpeed_Click" Tag="191" Padding="10,6" FontSize="11"/>
+                                    <Button Content="100% (Max)" Click="SetMotorSpeed_Click" Tag="255" Padding="10,6" FontSize="11" Background="OrangeRed"/>
+                                </StackPanel>
+                            </StackPanel>
+
+                            <!-- Status Display -->
+                            <Grid ColumnDefinitions="1.5*, 1*" ColumnSpacing="15">
+                                <!-- Current Status -->
+                                <Border Background="{ThemeResource SystemControlForegroundBaseLowBrush}" Padding="16" CornerRadius="8" Opacity="0.2">
+                                    <StackPanel Spacing="12">
+                                        <TextBlock Text="Motor Status:" Style="{StaticResource BodyStrongTextBlockStyle}" FontSize="12"/>
+                                        <Border Padding="12" CornerRadius="8" Background="{ThemeResource SystemControlBackgroundAccentBrush}" Opacity="0.3">
+                                            <StackPanel Spacing="8">
+                                                <TextBlock x:Name="MotorStatusIcon" Text="⏸️ STOPPED" FontSize="18" FontWeight="Bold" Foreground="Gray"/>
+                                                <TextBlock x:Name="MotorSpeedPercent" Text="Speed: 0%" FontSize="12" Foreground="Gray"/>
+                                                <TextBlock x:Name="MotorPWMValue" Text="PWM: 0/255" FontSize="11" Foreground="LightGray"/>
+                                            </StackPanel>
+                                        </Border>
+                                    </StackPanel>
+                                </Border>
+
+                                <!-- Test Log -->
+                                <Border Background="{ThemeResource SystemControlForegroundBaseLowBrush}" Padding="16" CornerRadius="8" Opacity="0.2">
+                                    <StackPanel Spacing="10">
+                                        <TextBlock Text="Activity Log:" FontSize="12" FontWeight="SemiBold"/>
+                                        <Border Background="{ThemeResource SystemControlBackgroundBaseLowBrush}" Padding="0" CornerRadius="6" BorderThickness="1" BorderBrush="{ThemeResource SystemControlForegroundBaseLowBrush}" Height="120">
+                                            <ListView x:Name="MotorActivityLog" Background="Transparent" Padding="8">
+                                                <ListView.ItemTemplate>
+                                                    <DataTemplate x:DataType="x:String">
+                                                        <TextBlock Text="{x:Bind}" FontFamily="Consolas" FontSize="9" Foreground="LimeGreen" TextWrapping="Wrap" Margin="2,1"/>
+                                                    </DataTemplate>
+                                                </ListView.ItemTemplate>
+                                            </ListView>
+                                        </Border>
+                                    </StackPanel>
+                                </Border>
+                            </Grid>
+
+                            <!-- Instructions -->
+                            <Border Background="{ThemeResource SystemControlBackgroundAccentBrush}" Padding="12" CornerRadius="8" Opacity="0.1">
+                                <StackPanel Spacing="8">
+                                    <TextBlock Text="📋 Instructions:" FontWeight="Bold" FontSize="11"/>
+                                    <TextBlock Text="1. Use slider to set desired motor speed (0-255)" FontSize="10" Foreground="Gray"/>
+                                    <TextBlock Text="2. Click 'Apply Speed' to send command to Arduino" FontSize="10" Foreground="Gray"/>
+                                    <TextBlock Text="3. Motor should spin faster as speed increases" FontSize="10" Foreground="Gray"/>
+                                    <TextBlock Text="4. Listen for speed changes and vibration level" FontSize="10" Foreground="Gray"/>
+                                    <TextBlock Text="5. Use quick presets for common speeds" FontSize="10" Foreground="Gray"/>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Pin Reference -->
+                            <Border Background="{ThemeResource SystemControlBackgroundAccentBrush}" Padding="12" CornerRadius="8" Opacity="0.1">
+                                <StackPanel Spacing="8">
+                                    <TextBlock Text="🔌 Pin Configuration:" FontWeight="Bold" FontSize="11"/>
+                                    <TextBlock Text="Motor → Arduino Pin 8 (PWM capable)" FontSize="10" Foreground="LightGreen"/>
+                                    <TextBlock Text="Speed Range: 0 (off) to 255 (full speed)" FontSize="10" Foreground="LightGreen"/>
+                                    <TextBlock Text="Frequency: 490 Hz (standard Arduino PWM)" FontSize="10" Foreground="LightGreen"/>
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Step Signal Monitor Panel -->
+                    <Border Background="{ThemeResource SystemControlBackgroundAltHighBrush}" Padding="24" CornerRadius="12" BorderThickness="1" BorderBrush="{ThemeResource SystemControlForegroundBaseLowBrush}">
+                        <StackPanel Spacing="20">
+                            <StackPanel Spacing="8">
+                                <TextBlock Text="⚙️ Step Signal Monitor - Pin 3" Style="{StaticResource SubtitleTextBlockStyle}" />
+                                <TextBlock Text="Stepper motor pulse control. Send step pulses to control stepper motor rotation." FontSize="12" Foreground="Gray" TextWrapping="Wrap"/>
+                            </StackPanel>
+
+                            <!-- Step Controls -->
+                            <StackPanel Spacing="15">
+                                <StackPanel Spacing="8">
+                                    <TextBlock Text="Step Pulse Count:" FontSize="12" FontWeight="SemiBold"/>
+                                    <Slider x:Name="StepCountSlider" Minimum="1" Maximum="200" Value="50" StepFrequency="10" HorizontalAlignment="Stretch"/>
+                                    <StackPanel Orientation="Horizontal" Spacing="20">
+                                        <TextBlock x:Name="StepCountValue" Text="Steps: 50" FontSize="14" FontWeight="Bold" Foreground="{ThemeResource SystemControlForegroundAccentBrush}"/>
+                                        <Button Content="Send Steps" Click="SendSteps_Click" Style="{StaticResource AccentButtonStyle}" Padding="12,6"/>
+                                    </StackPanel>
+                                </StackPanel>
+
+                                <StackPanel Spacing="8">
+                                    <TextBlock Text="Step Speed (Delay between pulses):" FontSize="12" FontWeight="SemiBold"/>
+                                    <Slider x:Name="StepDelaySlider" Minimum="1" Maximum="100" Value="50" StepFrequency="5" HorizontalAlignment="Stretch"/>
+                                    <StackPanel Orientation="Horizontal" Spacing="20">
+                                        <TextBlock x:Name="StepDelayValue" Text="Delay: 50ms" FontSize="14" FontWeight="Bold" Foreground="{ThemeResource SystemControlForegroundAccentBrush}"/>
+                                        <TextBlock x:Name="StepFrequencyValue" Text="~20 Hz" FontSize="12" Foreground="Gray"/>
+                                    </StackPanel>
+                                </StackPanel>
+                            </StackPanel>
+
+                            <!-- Step Presets -->
+                            <StackPanel Spacing="8">
+                                <TextBlock Text="Quick Step Sequences:" FontSize="12" FontWeight="SemiBold"/>
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <Button Content="10 Slow" Click="SendStepSequence_Click" Tag="10" Padding="10,6" FontSize="11"/>
+                                    <Button Content="50 Medium" Click="SendStepSequence_Click" Tag="50" Padding="10,6" FontSize="11"/>
+                                    <Button Content="100 Fast" Click="SendStepSequence_Click" Tag="100" Padding="10,6" FontSize="11"/>
+                                    <Button Content="200 Full Rev" Click="SendStepSequence_Click" Tag="200" Padding="10,6" FontSize="11" Background="OrangeRed"/>
+                                </StackPanel>
+                            </StackPanel>
+
+                            <!-- Status Display -->
+                            <Grid ColumnDefinitions="1.5*, 1*" ColumnSpacing="15">
+                                <!-- Step Status -->
+                                <Border Background="{ThemeResource SystemControlForegroundBaseLowBrush}" Padding="16" CornerRadius="8" Opacity="0.2">
+                                    <StackPanel Spacing="12">
+                                        <TextBlock Text="Step Status:" Style="{StaticResource BodyStrongTextBlockStyle}" FontSize="12"/>
+                                        <Border Padding="12" CornerRadius="8" Background="{ThemeResource SystemControlBackgroundAccentBrush}" Opacity="0.3">
+                                            <StackPanel Spacing="8">
+                                                <TextBlock x:Name="StepStatusIcon" Text="⏸️ IDLE" FontSize="18" FontWeight="Bold" Foreground="Gray"/>
+                                                <TextBlock x:Name="StepCountStatus" Text="Pulses: 0" FontSize="12" Foreground="Gray"/>
+                                                <TextBlock x:Name="StepFrequencyStatus" Text="Freq: 20 Hz" FontSize="11" Foreground="LightGray"/>
+                                            </StackPanel>
+                                        </Border>
+                                    </StackPanel>
+                                </Border>
+
+                                <!-- Step Log -->
+                                <Border Background="{ThemeResource SystemControlForegroundBaseLowBrush}" Padding="16" CornerRadius="8" Opacity="0.2">
+                                    <StackPanel Spacing="10">
+                                        <TextBlock Text="Pulse Log:" FontSize="12" FontWeight="SemiBold"/>
+                                        <Border Background="{ThemeResource SystemControlBackgroundBaseLowBrush}" Padding="0" CornerRadius="6" BorderThickness="1" BorderBrush="{ThemeResource SystemControlForegroundBaseLowBrush}" Height="120">
+                                            <ListView x:Name="StepPulseLog" Background="Transparent" Padding="8">
+                                                <ListView.ItemTemplate>
+                                                    <DataTemplate x:DataType="x:String">
+                                                        <TextBlock Text="{x:Bind}" FontFamily="Consolas" FontSize="9" Foreground="LimeGreen" TextWrapping="Wrap" Margin="2,1"/>
+                                                    </DataTemplate>
+                                                </ListView.ItemTemplate>
+                                            </ListView>
+                                        </Border>
+                                    </StackPanel>
+                                </Border>
+                            </Grid>
+
+                            <!-- Instructions -->
+                            <Border Background="{ThemeResource SystemControlBackgroundAccentBrush}" Padding="12" CornerRadius="8" Opacity="0.1">
+                                <StackPanel Spacing="8">
+                                    <TextBlock Text="📋 Instructions:" FontWeight="Bold" FontSize="11"/>
+                                    <TextBlock Text="1. Set desired number of steps (1-200)" FontSize="10" Foreground="Gray"/>
+                                    <TextBlock Text="2. Set speed by adjusting delay between pulses" FontSize="10" Foreground="Gray"/>
+                                    <TextBlock Text="3. Click 'Send Steps' to send pulses to Arduino" FontSize="10" Foreground="Gray"/>
+                                    <TextBlock Text="4. Or use quick presets for standard sequences" FontSize="10" Foreground="Gray"/>
+                                    <TextBlock Text="5. Monitor pulse log for command history" FontSize="10" Foreground="Gray"/>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Pin Reference -->
+                            <Border Background="{ThemeResource SystemControlBackgroundAccentBrush}" Padding="12" CornerRadius="8" Opacity="0.1">
+                                <StackPanel Spacing="8">
+                                    <TextBlock Text="🔌 Pin Configuration:" FontWeight="Bold" FontSize="11"/>
+                                    <TextBlock Text="STEP → Arduino Pin 3" FontSize="10" Foreground="LightGreen"/>
+                                    <TextBlock Text="Pulse Width: 2 microseconds" FontSize="10" Foreground="LightGreen"/>
+                                    <TextBlock Text="Range: 1-200 steps per command" FontSize="10" Foreground="LightGreen"/>
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Limit Switch Monitor Panel -->
+                    <Border Background="{ThemeResource SystemControlBackgroundAltHighBrush}" Padding="24" CornerRadius="12" BorderThickness="1" BorderBrush="{ThemeResource SystemControlForegroundBaseLowBrush}">
+                        <StackPanel Spacing="20">
+                            <StackPanel Spacing="8">
+                                <TextBlock Text="🔔 Limit Switch Monitor - Pin 4" Style="{StaticResource SubtitleTextBlockStyle}" />
+                                <TextBlock Text="Real-time monitoring of limit switch state. Press the limit switch to see live updates." FontSize="12" Foreground="Gray" TextWrapping="Wrap"/>
+                            </StackPanel>
+
+                            <!-- Monitor Controls -->
+                            <StackPanel Spacing="10">
+                                <StackPanel Orientation="Horizontal" Spacing="10">
+                                    <Button x:Name="StartLimitSwitchMonitorButton" Content="▶ Start Monitor" Click="StartLimitSwitchMonitor_Click" Style="{StaticResource AccentButtonStyle}" Padding="12,8"/>
+                                    <Button x:Name="StopLimitSwitchMonitorButton" Content="⏹ Stop Monitor" Click="StopLimitSwitchMonitor_Click" Padding="12,8" IsEnabled="False"/>
+                                    <Button Content="Clear" Click="ClearLimitSwitchOutput" Padding="12,8"/>
+                                </StackPanel>
+                            </StackPanel>
+
+                            <!-- Live Status Display -->
+                            <Grid ColumnDefinitions="*, *" ColumnSpacing="15">
+                                <!-- Current State -->
+                                <Border Background="{ThemeResource SystemControlForegroundBaseLowBrush}" Padding="16" CornerRadius="8" Opacity="0.2">
+                                    <StackPanel Spacing="12" VerticalAlignment="Center" HorizontalAlignment="Center">
+                                        <TextBlock Text="Current State:" Style="{StaticResource BodyStrongTextBlockStyle}" FontSize="12" TextAlignment="Center"/>
+                                        <Border Padding="16" CornerRadius="8" Background="{ThemeResource SystemControlBackgroundAccentBrush}" Opacity="0.3">
+                                            <TextBlock x:Name="LimitSwitchStateDisplay" Text="--- (Not Connected)" FontSize="32" FontWeight="Bold" TextAlignment="Center" Foreground="Gray" />
+                                        </Border>
+                                        <TextBlock x:Name="LimitSwitchStatusLabel" Text="Ready to start" FontSize="10" TextAlignment="Center" Foreground="Gray"/>
+                                    </StackPanel>
+                                </Border>
+
+                                <!-- Statistics -->
+                                <Border Background="{ThemeResource SystemControlForegroundBaseLowBrush}" Padding="16" CornerRadius="8" Opacity="0.2">
+                                    <StackPanel Spacing="10">
+                                        <StackPanel Spacing="6">
+                                            <TextBlock Text="Presses Detected:" FontSize="11" FontWeight="SemiBold"/>
+                                            <TextBlock x:Name="LimitSwitchPressCount" Text="0" FontSize="18" FontWeight="Bold" Foreground="{ThemeResource SystemControlForegroundAccentBrush}"/>
+                                        </StackPanel>
+                                        <StackPanel Spacing="6">
+                                            <TextBlock Text="Last Event:" FontSize="11" FontWeight="SemiBold"/>
+                                            <TextBlock x:Name="LimitSwitchLastEvent" Text="None" FontSize="11" Foreground="LightGray" TextWrapping="Wrap"/>
+                                        </StackPanel>
+                                    </StackPanel>
+                                </Border>
+                            </Grid>
+
+                            <!-- Event Log -->
+                            <StackPanel Spacing="8">
+                                <TextBlock Text="Event Log:" FontSize="12" FontWeight="SemiBold"/>
+                                <Border Background="{ThemeResource SystemControlBackgroundBaseLowBrush}" Padding="0" CornerRadius="8" BorderThickness="1" BorderBrush="{ThemeResource SystemControlForegroundBaseLowBrush}" Height="180">
+                                    <ListView x:Name="LimitSwitchEventLog" Background="Transparent" Padding="8">
+                                        <ListView.ItemTemplate>
+                                            <DataTemplate x:DataType="x:String">
+                                                <TextBlock Text="{x:Bind}" FontFamily="Consolas" FontSize="10" Foreground="LimeGreen" TextWrapping="Wrap" Margin="4,2"/>
+                                            </DataTemplate>
+                                        </ListView.ItemTemplate>
+                                    </ListView>
+                                </Border>
+                            </StackPanel>
+
+                            <!-- Instructions -->
+                            <Border Background="{ThemeResource SystemControlBackgroundAccentBrush}" Padding="12" CornerRadius="8" Opacity="0.1">
+                                <StackPanel Spacing="8">
+                                    <TextBlock Text="📋 Instructions:" FontWeight="Bold" FontSize="11"/>
+                                    <TextBlock Text="1. Click 'Start Monitor' to begin monitoring" FontSize="10" Foreground="Gray"/>
+                                    <TextBlock Text="2. Press the limit switch connected to Pin 4" FontSize="10" Foreground="Gray"/>
+                                    <TextBlock Text="3. Watch the state change from HIGH → LOW when pressed" FontSize="10" Foreground="Gray"/>
+                                    <TextBlock Text="4. Release the switch to return to HIGH" FontSize="10" Foreground="Gray"/>
+                                    <TextBlock Text="5. Check 'Presses Detected' counter for activity" FontSize="10" Foreground="Gray"/>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Wiring Reference -->
+                            <Border Background="{ThemeResource SystemControlBackgroundAccentBrush}" Padding="12" CornerRadius="8" Opacity="0.1">
+                                <StackPanel Spacing="8">
+                                    <TextBlock Text="🔌 Wiring:" FontWeight="Bold" FontSize="11"/>
+                                    <TextBlock Text="Limit Switch Pin 1 → Arduino Pin 4" FontSize="10" Foreground="LightGreen"/>
+                                    <TextBlock Text="Limit Switch Pin 2 → Arduino Ground (GND)" FontSize="10" Foreground="LightGreen"/>
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </ScrollViewer>
+
+            <!-- Serial Console View -->
+            <ScrollViewer x:Name="SerialConsolePanel" Visibility="Collapsed">
+                <StackPanel Padding="40" Spacing="30">
+                    <TextBlock Text="Serial Command Console" Style="{StaticResource TitleTextBlockStyle}" FontWeight="SemiLight" />
+
+                    <!-- Command Input Section -->
+                    <Border Background="{ThemeResource SystemControlBackgroundAltHighBrush}" Padding="24" CornerRadius="12" BorderThickness="1" BorderBrush="{ThemeResource SystemControlForegroundBaseLowBrush}">
+                        <StackPanel Spacing="15">
+                            <TextBlock Text="Send Commands" Style="{StaticResource SubtitleTextBlockStyle}" />
+
+                            <StackPanel Spacing="8">
+                                <TextBlock Text="Quick Commands:" FontSize="12" FontWeight="SemiBold"/>
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <Button Content="MEASURE" Click="QuickCmd_Measure" Padding="8,4" FontSize="12" Background="{ThemeResource SystemControlBackgroundAccentBrush}" Opacity="0.9"/>
+                                    <Button Content="STOP" Click="QuickCmd_Stop" Padding="8,4" Background="{ThemeResource SystemControlBackgroundAccentBrush}" Opacity="0.9"/>
+                                    <Button Content="HOME" Click="QuickCmd_Home" Padding="8,4" Background="{ThemeResource SystemControlBackgroundAccentBrush}" Opacity="0.9"/>
+                                    <Button Content="TEST" Click="QuickCmd_Test" Padding="8,4" Background="{ThemeResource SystemControlBackgroundAccentBrush}" Opacity="0.9"/>
+                                    <Button Content="PING" Click="QuickCmd_Ping" Padding="8,4" Background="{ThemeResource SystemControlBackgroundAccentBrush}" Opacity="0.9"/>
+                                    <Button Content="READ" Click="QuickCmd_Read" Padding="8,4" Background="{ThemeResource SystemControlBackgroundAccentBrush}" Opacity="0.9"/>
+                                </StackPanel>
+                            </StackPanel>
+
+                            <StackPanel Spacing="8">
+                                <TextBlock Text="Custom Command:" FontSize="12" FontWeight="SemiBold"/>
+                                <StackPanel Orientation="Horizontal" Spacing="10">
+                                    <TextBox x:Name="CommandInputBox" PlaceholderText="Enter command (e.g., MEASURE, HOME, MOVE;DISTANCE=50;SPEED=100;DIR=1)" HorizontalAlignment="Stretch" Height="40"/>
+                                    <Button x:Name="SendCommandButton" Content="SEND" Click="SendSerialCommand_Click" Style="{StaticResource AccentButtonStyle}" Padding="20,10" VerticalAlignment="Center"/>
+                                </StackPanel>
+                                <TextBlock Text="Examples: MEASURE | STOP | HOME | TEST | PING | READ | MOVE;DISTANCE=50;SPEED=100;DIR=1" FontSize="10" Foreground="Gray" TextWrapping="Wrap"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Main Console Area -->
+                    <Grid ColumnDefinitions="2*, 1.2*" ColumnSpacing="20" RowDefinitions="Auto, *" RowSpacing="20">
+                        <!-- Serial Output Log -->
+                        <TextBlock Grid.Column="0" Text="Serial Output Log" Style="{StaticResource SubtitleTextBlockStyle}" FontWeight="SemiBold"/>
+                        <Border Grid.Row="1" Grid.Column="0" Background="{ThemeResource SystemControlBackgroundAltHighBrush}" Padding="0" CornerRadius="12" BorderThickness="1" BorderBrush="{ThemeResource SystemControlForegroundBaseLowBrush}">
+                            <Grid RowDefinitions="*, Auto">
+                                <ListView x:Name="SerialOutputListView" ItemsSource="{x:Bind SerialOutputLog, Mode=OneWay}" Background="{ThemeResource SystemControlBackgroundBaseLowBrush}" Padding="12">
+                                    <ListView.ItemTemplate>
+                                        <DataTemplate x:DataType="x:String">
+                                            <StackPanel Spacing="2">
+                                                <TextBlock Text="{x:Bind}" FontFamily="Consolas" FontSize="11" Foreground="Lime" TextWrapping="Wrap" Margin="4,2"/>
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </ListView.ItemTemplate>
+                                </ListView>
+                                <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="8" Padding="12">
+                                    <Button Content="Clear Output" Click="ClearSerialConsole_Click" HorizontalAlignment="Stretch" Padding="0,8"/>
+                                    <TextBlock x:Name="LogCountLabel" Text="0 lines" VerticalAlignment="Center" FontSize="10" Foreground="Gray"/>
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+
+                        <!-- Command History -->
+                        <TextBlock Grid.Column="1" Text="Command History" Style="{StaticResource SubtitleTextBlockStyle}" FontWeight="SemiBold"/>
+                        <Border Grid.Row="1" Grid.Column="1" Background="{ThemeResource SystemControlBackgroundAltHighBrush}" Padding="0" CornerRadius="12" BorderThickness="1" BorderBrush="{ThemeResource SystemControlForegroundBaseLowBrush}">
+                            <Grid RowDefinitions="*, Auto">
+                                <ListView x:Name="CommandHistoryListView" ItemsSource="{x:Bind CommandHistory, Mode=OneWay}" Background="{ThemeResource SystemControlBackgroundBaseLowBrush}" Padding="12" SelectionChanged="CommandHistory_SelectionChanged">
+                                    <ListView.ItemTemplate>
+                                        <DataTemplate x:DataType="x:String">
+                                            <StackPanel Padding="8,6" Background="{ThemeResource SystemControlForegroundBaseLowBrush}" CornerRadius="4" Margin="0,2">
+                                                <TextBlock Text="{x:Bind}" FontFamily="Consolas" FontSize="10" TextWrapping="Wrap" Foreground="LightBlue"/>
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </ListView.ItemTemplate>
+                                </ListView>
+                                <Button Grid.Row="1" Content="Clear History" Click="ClearCommandHistory_Click" HorizontalAlignment="Stretch" Padding="0,8" Margin="12,8,12,12"/>
+                            </Grid>
+                        </Border>
+                    </Grid>
+
+                    <!-- Command Reference -->
+                    <Border Background="{ThemeResource SystemControlBackgroundAltHighBrush}" Padding="24" CornerRadius="12" BorderThickness="1" BorderBrush="{ThemeResource SystemControlForegroundBaseLowBrush}">
+                        <StackPanel Spacing="15">
+                            <TextBlock Text="Command Reference" Style="{StaticResource SubtitleTextBlockStyle}" FontWeight="SemiBold"/>
+                            <Grid ColumnDefinitions="*, *, *" ColumnSpacing="15" RowSpacing="12">
+                                <!-- MEASURE Command -->
+                                <Border Background="{ThemeResource SystemControlForegroundBaseLowBrush}" Padding="12" CornerRadius="8" Opacity="0.1">
+                                    <StackPanel Spacing="6">
+                                        <TextBlock Text="MEASURE" FontWeight="Bold" FontSize="12" Foreground="{ThemeResource SystemControlForegroundAccentBrush}"/>
+                                        <TextBlock Text="Start foot measurement scan" FontSize="10" Foreground="Gray" TextWrapping="Wrap"/>
+                                        <TextBlock Text="Response: FOOT=XX.XX" FontSize="9" Foreground="LightGreen"/>
+                                    </StackPanel>
+                                </Border>
+
+                                <!-- HOME Command -->
+                                <Border Background="{ThemeResource SystemControlForegroundBaseLowBrush}" Padding="12" CornerRadius="8" Opacity="0.1">
+                                    <StackPanel Spacing="6">
+                                        <TextBlock Text="HOME" FontWeight="Bold" FontSize="12" Foreground="{ThemeResource SystemControlForegroundAccentBrush}"/>
+                                        <TextBlock Text="Move to home position (limit switch)" FontSize="10" Foreground="Gray" TextWrapping="Wrap"/>
+                                        <TextBlock Text="Response: STATUS=..." FontSize="9" Foreground="LightGreen"/>
+                                    </StackPanel>
+                                </Border>
+
+                                <!-- STOP Command -->
+                                <Border Background="{ThemeResource SystemControlForegroundBaseLowBrush}" Padding="12" CornerRadius="8" Opacity="0.1">
+                                    <StackPanel Spacing="6">
+                                        <TextBlock Text="STOP" FontWeight="Bold" FontSize="12" Foreground="{ThemeResource SystemControlForegroundAccentBrush}"/>
+                                        <TextBlock Text="Stop motor immediately" FontSize="10" Foreground="Gray" TextWrapping="Wrap"/>
+                                        <TextBlock Text="Response: STATUS=..." FontSize="9" Foreground="LightGreen"/>
+                                    </StackPanel>
+                                </Border>
+
+                                <!-- MOVE Command -->
+                                <Border Background="{ThemeResource SystemControlForegroundBaseLowBrush}" Padding="12" CornerRadius="8" Opacity="0.1">
+                                    <StackPanel Spacing="6">
+                                        <TextBlock Text="MOVE;D=X;S=Y;DIR=Z" FontWeight="Bold" FontSize="12" Foreground="{ThemeResource SystemControlForegroundAccentBrush}"/>
+                                        <TextBlock Text="Move distance X at speed Y in direction Z" FontSize="10" Foreground="Gray" TextWrapping="Wrap"/>
+                                        <TextBlock Text="Example: MOVE;DISTANCE=50;SPEED=100;DIR=1" FontSize="9" Foreground="LightGreen"/>
+                                    </StackPanel>
+                                </Border>
+
+                                <!-- TEST Command -->
+                                <Border Background="{ThemeResource SystemControlForegroundBaseLowBrush}" Padding="12" CornerRadius="8" Opacity="0.1">
+                                    <StackPanel Spacing="6">
+                                        <TextBlock Text="TEST" FontWeight="Bold" FontSize="12" Foreground="{ThemeResource SystemControlForegroundAccentBrush}"/>
+                                        <TextBlock Text="Run motor test (forward/reverse)" FontSize="10" Foreground="Gray" TextWrapping="Wrap"/>
+                                        <TextBlock Text="Response: STATUS=..." FontSize="9" Foreground="LightGreen"/>
+                                    </StackPanel>
+                                </Border>
+
+                                <!-- PING Command -->
+                                <Border Background="{ThemeResource SystemControlForegroundBaseLowBrush}" Padding="12" CornerRadius="8" Opacity="0.1">
+                                    <StackPanel Spacing="6">
+                                        <TextBlock Text="PING" FontWeight="Bold" FontSize="12" Foreground="{ThemeResource SystemControlForegroundAccentBrush}"/>
+                                        <TextBlock Text="Check if device is online" FontSize="10" Foreground="Gray" TextWrapping="Wrap"/>
+                                        <TextBlock Text="Response: PONG=OK" FontSize="9" Foreground="LightGreen"/>
+                                    </StackPanel>
+                                </Border>
+
+                                <!-- READ Command -->
+                                <Border Background="{ThemeResource SystemControlForegroundBaseLowBrush}" Padding="12" CornerRadius="8" Opacity="0.1">
+                                    <StackPanel Spacing="6">
+                                        <TextBlock Text="READ" FontWeight="Bold" FontSize="12" Foreground="{ThemeResource SystemControlForegroundAccentBrush}"/>
+                                        <TextBlock Text="Read pressure sensor value" FontSize="10" Foreground="Gray" TextWrapping="Wrap"/>
+                                        <TextBlock Text="Response: PRESSURE=0-1023" FontSize="9" Foreground="LightGreen"/>
+                                    </StackPanel>
+                                </Border>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Connection Info -->
+                    <Border Background="{ThemeResource SystemControlBackgroundAccentBrush}" Padding="16" CornerRadius="8" Opacity="0.1">
+                        <StackPanel Spacing="8">
+                            <TextBlock Text="Serial Connection Info" FontWeight="Bold" FontSize="12"/>
+                            <StackPanel Orientation="Horizontal" Spacing="20">
+                                <StackPanel Spacing="4">
+                                    <TextBlock Text="Baud Rate:" FontSize="11" FontWeight="SemiBold"/>
+                                    <TextBlock Text="9600" FontSize="12" Foreground="{ThemeResource SystemControlForegroundAccentBrush}"/>
+                                </StackPanel>
+                                <StackPanel Spacing="4">
+                                    <TextBlock Text="Data Bits:" FontSize="11" FontWeight="SemiBold"/>
+                                    <TextBlock Text="8" FontSize="12" Foreground="{ThemeResource SystemControlForegroundAccentBrush}"/>
+                                </StackPanel>
+                                <StackPanel Spacing="4">
+                                    <TextBlock Text="Stop Bits:" FontSize="11" FontWeight="SemiBold"/>
+                                    <TextBlock Text="1" FontSize="12" Foreground="{ThemeResource SystemControlForegroundAccentBrush}"/>
+                                </StackPanel>
+                                <StackPanel Spacing="4">
+                                    <TextBlock Text="Parity:" FontSize="11" FontWeight="SemiBold"/>
+                                    <TextBlock Text="None" FontSize="12" Foreground="{ThemeResource SystemControlForegroundAccentBrush}"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </ScrollViewer>
+
+            <!-- Sensor Detection Panel -->
+            <ScrollViewer Visibility="Collapsed">
+                <StackPanel Padding="40" Spacing="30">
+                    <StackPanel Spacing="8">
+                        <TextBlock Text="Sensor Detection &amp; Validation System" Style="{StaticResource TitleTextBlockStyle}" FontWeight="SemiLight" />
+                        <TextBlock Text="Automatically detect, validate, and monitor all connected sensors" FontSize="14" Foreground="Gray" />
+                    </StackPanel>
+
+                    <!-- Control Panel -->
+                    <Border Background="{ThemeResource SystemControlBackgroundAltHighBrush}" Padding="24" CornerRadius="12" BorderThickness="1" BorderBrush="{ThemeResource SystemControlForegroundBaseLowBrush}">
+                        <StackPanel Spacing="15">
+                            <TextBlock Text="Detection Controls" Style="{StaticResource SubtitleTextBlockStyle}" FontWeight="SemiBold" />
+                            <StackPanel Orientation="Horizontal" Spacing="10">
+                                <Button x:Name="StartDetectionButton" Content="🔎 Start Handshake" Click="StartSensorDetection_Click" Style="{StaticResource AccentButtonStyle}" Padding="12,8" />
+                                <Button x:Name="ValidateButton" Content="✓ Validate Sensors" Click="ValidateSensors_Click" Padding="12,8" />
+                                <Button x:Name="ResetDetectionButton" Content="↻ Reset Detection" Click="ResetDetection_Click" Padding="12,8" />
+                                <Button Content="? Help" Click="SensorHelp_Click" Padding="12,8" />
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Status Summary -->
+                    <Grid ColumnDefinitions="*, *, *" ColumnSpacing="20">
+                        <!-- Connected Sensors -->
+                        <Border Background="{ThemeResource SystemControlForegroundBaseLowBrush}" Padding="20" CornerRadius="12" Opacity="0.2">
+                            <StackPanel Spacing="12" HorizontalAlignment="Center">
+                                <TextBlock Text="Connected Sensors" Style="{StaticResource BodyStrongTextBlockStyle}" TextAlignment="Center" />
+                                <TextBlock x:Name="ConnectedSensorCount" Text="0/5" Style="{StaticResource HeaderTextBlockStyle}" Foreground="{ThemeResource SystemControlForegroundAccentBrush}" TextAlignment="Center" />
+                                <ProgressBar x:Name="SensorProgressBar" Minimum="0" Maximum="5" Value="0" Height="6" CornerRadius="3" />
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Detection Status -->
+                        <Border Background="{ThemeResource SystemControlForegroundBaseLowBrush}" Padding="20" CornerRadius="12" Opacity="0.2">
+                            <StackPanel Spacing="12" HorizontalAlignment="Center">
+                                <TextBlock Text="System Status" Style="{StaticResource BodyStrongTextBlockStyle}" TextAlignment="Center" />
+                                <TextBlock x:Name="SystemStatusText" Text="⏸️ Idle" Style="{StaticResource HeaderTextBlockStyle}" Foreground="Gray" TextAlignment="Center" />
+                                <TextBlock x:Name="LastCheckText" Text="Never" FontSize="11" Foreground="Gray" TextAlignment="Center" />
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Detection Time -->
+                        <Border Background="{ThemeResource SystemControlForegroundBaseLowBrush}" Padding="20" CornerRadius="12" Opacity="0.2">
+                            <StackPanel Spacing="12" HorizontalAlignment="Center">
+                                <TextBlock Text="Handshake Time" Style="{StaticResource BodyStrongTextBlockStyle}" TextAlignment="Center" />
+                                <TextBlock x:Name="HandshakeTimeText" Text="0ms" Style="{StaticResource HeaderTextBlockStyle}" Foreground="{ThemeResource SystemControlForegroundAccentBrush}" TextAlignment="Center" />
+                                <TextBlock Text="Total handshake duration" FontSize="11" Foreground="Gray" TextAlignment="Center" />
+                            </StackPanel>
+                        </Border>
+                    </Grid>
+
+                    <!-- Sensor List -->
+                    <Border Background="{ThemeResource SystemControlBackgroundAltHighBrush}" Padding="24" CornerRadius="12" BorderThickness="1" BorderBrush="{ThemeResource SystemControlForegroundBaseLowBrush}">
+                        <StackPanel Spacing="15">
+                            <TextBlock Text="Detected Sensors" Style="{StaticResource SubtitleTextBlockStyle}" FontWeight="SemiBold" />
+                            <ListView x:Name="SensorListView" Height="300" Background="{ThemeResource SystemControlBackgroundBaseLowBrush}" Padding="12">
+                                <ListView.ItemTemplate>
+                                    <DataTemplate x:DataType="x:String">
+                                        <Border Padding="12" CornerRadius="6" Background="{ThemeResource SystemControlBackgroundAccentBrush}" Margin="0,4">
+                                            <TextBlock Text="{x:Bind}" FontSize="12" TextWrapping="Wrap" Foreground="LimeGreen" FontFamily="Consolas" />
+                                        </Border>
+                                    </DataTemplate>
+                                </ListView.ItemTemplate>
+                            </ListView>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Sensor Details -->
+                    <Border Background="{ThemeResource SystemControlBackgroundAltHighBrush}" Padding="24" CornerRadius="12" BorderThickness="1" BorderBrush="{ThemeResource SystemControlForegroundBaseLowBrush}">
+                        <StackPanel Spacing="15">
+                            <TextBlock Text="Sensor Information" Style="{StaticResource SubtitleTextBlockStyle}" FontWeight="SemiBold" />
+                            <Grid ColumnDefinitions="1*, 1*, 1*, 1*" ColumnSpacing="15" RowSpacing="15">
+                                <!-- Limit Switch Card -->
+                                <Border Background="{ThemeResource SystemControlForegroundBaseLowBrush}" Padding="16" CornerRadius="8" Opacity="0.1">
+                                    <StackPanel Spacing="8">
+                                        <TextBlock Text="🔴 Limit Switch" FontWeight="Bold" FontSize="12" />
+                                        <TextBlock Text="Pin 4" FontSize="10" Foreground="Gray" />
+                                        <Border Padding="8" CornerRadius="4" Background="{ThemeResource SystemControlBackgroundAccentBrush}" Opacity="0.3">
+                                            <TextBlock x:Name="LimitSwitchStatus" Text="❌ Not Detected" FontSize="11" Foreground="Gray" />
+                                        </Border>
+                                        <TextBlock Text="ID: 0x01" FontSize="9" Foreground="LightGray" />
+                                    </StackPanel>
+                                </Border>
+
+                                <!-- Motor PWM Card -->
+                                <Border Background="{ThemeResource SystemControlForegroundBaseLowBrush}" Padding="16" CornerRadius="8" Opacity="0.1">
+                                    <StackPanel Spacing="8">
+                                        <TextBlock Text="⚡ Motor PWM" FontWeight="Bold" FontSize="12" />
+                                        <TextBlock Text="Pin 8" FontSize="10" Foreground="Gray" />
+                                        <Border Padding="8" CornerRadius="4" Background="{ThemeResource SystemControlBackgroundAccentBrush}" Opacity="0.3">
+                                            <TextBlock x:Name="MotorPWMStatus" Text="❌ Not Detected" FontSize="11" Foreground="Gray" />
+                                        </Border>
+                                        <TextBlock Text="ID: 0x02" FontSize="9" Foreground="LightGray" />
+                                    </StackPanel>
+                                </Border>
+
+                                <!-- Stepper Motor Card -->
+                                <Border Background="{ThemeResource SystemControlForegroundBaseLowBrush}" Padding="16" CornerRadius="8" Opacity="0.1">
+                                    <StackPanel Spacing="8">
+                                        <TextBlock Text="⚙️ Stepper Motor" FontWeight="Bold" FontSize="12" />
+                                        <TextBlock Text="Pin 3" FontSize="10" Foreground="Gray" />
+                                        <Border Padding="8" CornerRadius="4" Background="{ThemeResource SystemControlBackgroundAccentBrush}" Opacity="0.3">
+                                            <TextBlock x:Name="StepperStatus" Text="❌ Not Detected" FontSize="11" Foreground="Gray" />
+                                        </Border>
+                                        <TextBlock Text="ID: 0x03" FontSize="9" Foreground="LightGray" />
+                                    </StackPanel>
+                                </Border>
+
+                                <!-- Pressure Sensor Card -->
+                                <Border Background="{ThemeResource SystemControlForegroundBaseLowBrush}" Padding="16" CornerRadius="8" Opacity="0.1">
+                                    <StackPanel Spacing="8">
+                                        <TextBlock Text="📊 Pressure Sensor" FontWeight="Bold" FontSize="12" />
+                                        <TextBlock Text="I2C 0x76" FontSize="10" Foreground="Gray" />
+                                        <Border Padding="8" CornerRadius="4" Background="{ThemeResource SystemControlBackgroundAccentBrush}" Opacity="0.3">
+                                            <TextBlock x:Name="PressureStatus" Text="❌ Not Detected" FontSize="11" Foreground="Gray" />
+                                        </Border>
+                                        <TextBlock Text="ID: 0x05" FontSize="9" Foreground="LightGray" />
+                                    </StackPanel>
+                                </Border>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Instructions -->
+                    <Border Background="{ThemeResource SystemControlBackgroundAccentBrush}" Padding="16" CornerRadius="8" Opacity="0.1">
+                        <StackPanel Spacing="10">
+                            <TextBlock Text="📋 How to Use" FontWeight="Bold" FontSize="12" />
+                            <TextBlock Text="1. Click 'Start Handshake' to begin sensor detection" FontSize="11" Foreground="Gray" />
+                            <TextBlock Text="2. System will probe each sensor for a response" FontSize="11" Foreground="Gray" />
+                            <TextBlock Text="3. Results show which sensors are connected (✓) or missing (✗)" FontSize="11" Foreground="Gray" />
+                            <TextBlock Text="4. Click 'Validate Sensors' to verify connected sensors are responding" FontSize="11" Foreground="Gray" />
+                            <TextBlock Text="5. Periodic checks run automatically every 5 seconds" FontSize="11" Foreground="Gray" />
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </ScrollViewer>
+
+            <!-- Arduino Control Panel -->
+            <ScrollViewer Visibility="Collapsed">
+                <StackPanel Padding="40" Spacing="30">
+                    <StackPanel Spacing="8">
+                        <TextBlock Text="Arduino Uno - Comprehensive Control System" Style="{StaticResource TitleTextBlockStyle}" FontWeight="SemiLight" />
+                        <TextBlock Text="Full control of all pins, sensors, and actuators with real-time feedback" FontSize="14" Foreground="Gray" />
+                    </StackPanel>
+
+                    <!-- Motor Control Section -->
+                    <Border Background="{ThemeResource SystemControlBackgroundAltHighBrush}" Padding="24" CornerRadius="12" BorderThickness="1" BorderBrush="{ThemeResource SystemControlForegroundBaseLowBrush}">
+                        <StackPanel Spacing="15">
+                            <TextBlock Text="Motor Control" Style="{StaticResource SubtitleTextBlockStyle}" FontWeight="SemiBold" />
+
+                            <!-- Motor Speed Slider -->
+                            <StackPanel Spacing="8">
+                                <TextBlock Text="Motor Speed (0-255)" FontSize="12" FontWeight="SemiBold" />
+                                <StackPanel Orientation="Horizontal" Spacing="10">
+                                    <Slider x:Name="ArduinoMotorSpeedSlider" Minimum="0" Maximum="255" Width="200" Height="40" VerticalAlignment="Center" />
+                                    <TextBlock x:Name="ArduinoMotorSpeedValue" Text="0" FontSize="14" Foreground="{ThemeResource SystemControlForegroundAccentBrush}" VerticalAlignment="Center" MinWidth="50" />
+                                    <Button Content="Apply" Click="ApplyMotorSpeed_Click" Padding="12,8" />
+                                </StackPanel>
+                            </StackPanel>
+
+                            <!-- Motor Direction -->
+                            <StackPanel Spacing="8">
+                                <TextBlock Text="Motor Direction" FontSize="12" FontWeight="SemiBold" />
+                                <StackPanel Orientation="Horizontal" Spacing="10">
+                                    <Button Content="Forward" Click="SetMotorDirection_Click" Tag="1" Padding="12,8" Style="{StaticResource AccentButtonStyle}" />
+                                    <Button Content="Reverse" Click="SetMotorDirection_Click" Tag="0" Padding="12,8" />
+                                </StackPanel>
+                            </StackPanel>
+
+                            <!-- Motor Enable/Stop -->
+                            <StackPanel Orientation="Horizontal" Spacing="10">
+                                <Button x:Name="ArduinoMotorEnableButton" Content="Enable Motor" Click="ToggleMotorEnable_Click" Padding="12,8" Style="{StaticResource AccentButtonStyle}" />
+                                <Button Content="STOP" Click="StopMotor_Click" Padding="12,8" Foreground="OrangeRed" Background="Transparent" BorderThickness="1" BorderBrush="OrangeRed" />
+                                <Button Content="Status" Click="GetMotorStatus_Click" Padding="12,8" />
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Stepper Motor Control Section -->
+                    <Border Background="{ThemeResource SystemControlBackgroundAltHighBrush}" Padding="24" CornerRadius="12" BorderThickness="1" BorderBrush="{ThemeResource SystemControlForegroundBaseLowBrush}">
+                        <StackPanel Spacing="15">
+                            <TextBlock Text="Stepper Motor Control" Style="{StaticResource SubtitleTextBlockStyle}" FontWeight="SemiBold" />
+
+                            <!-- Step Count -->
+                            <StackPanel Spacing="8">
+                                <TextBlock Text="Step Count" FontSize="12" FontWeight="SemiBold" />
+                                <StackPanel Orientation="Horizontal" Spacing="10">
+                                    <NumberBox x:Name="ArduinoStepCountBox" Value="100" Minimum="1" Maximum="10000" SpinButtonPlacementMode="Inline" Width="150" />
+                                    <Button Content="Send Pulses" Click="SendStepPulses_Click" Padding="12,8" Style="{StaticResource AccentButtonStyle}" />
+                                </StackPanel>
+                            </StackPanel>
+
+                            <!-- Stepper Speed -->
+                            <StackPanel Spacing="8">
+                                <TextBlock Text="Stepper Speed (Hz)" FontSize="12" FontWeight="SemiBold" />
+                                <StackPanel Orientation="Horizontal" Spacing="10">
+                                    <NumberBox x:Name="ArduinoStepperSpeedBox" Value="100" Minimum="1" Maximum="1000" SpinButtonPlacementMode="Inline" Width="150" />
+                                    <Button Content="Set Speed" Click="SetStepperSpeed_Click" Padding="12,8" />
+                                </StackPanel>
+                            </StackPanel>
+
+                            <!-- Homing -->
+                            <StackPanel Orientation="Horizontal" Spacing="10">
+                                <Button Content="Go Home" Click="GoHome_Click" Padding="12,8" Style="{StaticResource AccentButtonStyle}" />
+                                <TextBlock Text="Move to limit switch" VerticalAlignment="Center" FontSize="11" Foreground="Gray" />
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Sensor Reading Section -->
+                    <Border Background="{ThemeResource SystemControlBackgroundAltHighBrush}" Padding="24" CornerRadius="12" BorderThickness="1" BorderBrush="{ThemeResource SystemControlForegroundBaseLowBrush}">
+                        <StackPanel Spacing="15">
+                            <TextBlock Text="Sensor Reading" Style="{StaticResource SubtitleTextBlockStyle}" FontWeight="SemiBold" />
+
+                            <Grid ColumnDefinitions="*, *, *" ColumnSpacing="15" RowSpacing="10">
+                                <!-- Limit Switch -->
+                                <StackPanel Spacing="8">
+                                    <TextBlock Text="Limit Switch (Pin 4)" FontSize="12" FontWeight="SemiBold" />
+                                    <Border Background="{ThemeResource SystemControlBackgroundAccentBrush}" Padding="12" CornerRadius="6">
+                                        <TextBlock x:Name="ArduinoLimitSwitchReadout" Text="OPEN" FontSize="14" Foreground="LimeGreen" TextAlignment="Center" />
+                                    </Border>
+                                    <Button Content="Read" Click="ReadLimitSwitch_Click" HorizontalAlignment="Stretch" />
+                                </StackPanel>
+
+                                <!-- HW201 Obstacle Sensor -->
+                                <StackPanel Spacing="8">
+                                    <TextBlock Text="HW201 Obstacle (Pin 6)" FontSize="12" FontWeight="SemiBold" />
+                                    <Border Background="{ThemeResource SystemControlBackgroundAccentBrush}" Padding="12" CornerRadius="6">
+                                        <TextBlock x:Name="ArduinoObstacleReadout" Text="CLEAR" FontSize="14" Foreground="LimeGreen" TextAlignment="Center" />
+                                    </Border>
+                                    <Button Content="Read" Click="ReadObstacleSensor_Click" HorizontalAlignment="Stretch" />
+                                </StackPanel>
+
+                                <!-- Pressure Sensor -->
+                                <StackPanel Spacing="8">
+                                    <TextBlock Text="Pressure (I2C 0x76)" FontSize="12" FontWeight="SemiBold" />
+                                    <Border Background="{ThemeResource SystemControlBackgroundAccentBrush}" Padding="12" CornerRadius="6">
+                                        <TextBlock x:Name="ArduinoPressureReadout" Text="---" FontSize="14" Foreground="LimeGreen" TextAlignment="Center" />
+                                    </Border>
+                                    <Button Content="Read" Click="ReadPressure_Click" HorizontalAlignment="Stretch" />
+                                </StackPanel>
+
+                                <!-- Analog Input -->
+                                <StackPanel Spacing="8">
+                                    <TextBlock Text="Analog Input" FontSize="12" FontWeight="SemiBold" />
+                                    <StackPanel Orientation="Horizontal" Spacing="4">
+                                        <NumberBox x:Name="ArduinoAnalogPinBox" Value="0" Minimum="0" Maximum="5" SpinButtonPlacementMode="Compact" Width="60" />
+                                        <TextBlock Text="(A0-A5)" VerticalAlignment="Center" FontSize="10" Foreground="Gray" />
+                                    </StackPanel>
+                                    <Border Background="{ThemeResource SystemControlBackgroundAccentBrush}" Padding="12" CornerRadius="6">
+                                        <TextBlock x:Name="ArduinoAnalogReadout" Text="---" FontSize="14" Foreground="LimeGreen" TextAlignment="Center" />
+                                    </Border>
+                                    <Button Content="Read" Click="ReadAnalog_Click" HorizontalAlignment="Stretch" />
+                                </StackPanel>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- GPIO Control Section -->
+                    <Border Background="{ThemeResource SystemControlBackgroundAltHighBrush}" Padding="24" CornerRadius="12" BorderThickness="1" BorderBrush="{ThemeResource SystemControlForegroundBaseLowBrush}">
+                        <StackPanel Spacing="15">
+                            <TextBlock Text="GPIO Control" Style="{StaticResource SubtitleTextBlockStyle}" FontWeight="SemiBold" />
+
+                            <!-- Digital Write -->
+                            <StackPanel Spacing="8">
+                                <TextBlock Text="Digital Write" FontSize="12" FontWeight="SemiBold" />
+                                <StackPanel Orientation="Horizontal" Spacing="10">
+                                    <NumberBox x:Name="ArduinoDigitalPinBox" Value="7" Minimum="0" Maximum="13" SpinButtonPlacementMode="Compact" Width="80" />
+                                    <ComboBox x:Name="ArduinoDigitalValueCombo" Width="100">
+                                        <ComboBoxItem Content="LOW (0)" />
+                                        <ComboBoxItem Content="HIGH (1)" IsSelected="True" />
+                                    </ComboBox>
+                                    <Button Content="Write" Click="WriteDigital_Click" Padding="12,8" Style="{StaticResource AccentButtonStyle}" />
+                                </StackPanel>
+                            </StackPanel>
+
+                            <!-- PWM Write -->
+                            <StackPanel Spacing="8">
+                                <TextBlock Text="PWM Write (Pins 3,5,6,9,10,11)" FontSize="12" FontWeight="SemiBold" />
+                                <StackPanel Orientation="Horizontal" Spacing="10">
+                                    <NumberBox x:Name="ArduinoPWMPinBox" Value="6" Minimum="3" Maximum="11" SpinButtonPlacementMode="Compact" Width="80" />
+                                    <NumberBox x:Name="ArduinoPWMValueBox" Value="128" Minimum="0" Maximum="255" SpinButtonPlacementMode="Inline" Width="120" />
+                                    <Button Content="Write" Click="WritePWM_Click" Padding="12,8" Style="{StaticResource AccentButtonStyle}" />
+                                </StackPanel>
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- System Commands Section -->
+                    <Border Background="{ThemeResource SystemControlBackgroundAltHighBrush}" Padding="24" CornerRadius="12" BorderThickness="1" BorderBrush="{ThemeResource SystemControlForegroundBaseLowBrush}">
+                        <StackPanel Spacing="15">
+                            <TextBlock Text="System Commands" Style="{StaticResource SubtitleTextBlockStyle}" FontWeight="SemiBold" />
+
+                            <StackPanel Orientation="Horizontal" Spacing="10">
+                                <Button Content="Status" Click="GetSystemStatus_Click" Padding="12,8" />
+                                <Button Content="Scan" Click="SensorScan_Click" Padding="12,8" />
+                                <Button Content="Uptime" Click="GetUptime_Click" Padding="12,8" />
+                                <Button Content="Reset" Click="ResetArduino_Click" Padding="12,8" />
+                                <Button Content="Help" Click="ShowArduinoHelp_Click" Padding="12,8" />
+                                <Button Content="PING" Click="SendPing_Click" Padding="12,8" />
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Command Input Section -->
+                    <Border Background="{ThemeResource SystemControlBackgroundAltHighBrush}" Padding="24" CornerRadius="12" BorderThickness="1" BorderBrush="{ThemeResource SystemControlForegroundBaseLowBrush}">
+                        <StackPanel Spacing="15">
+                            <TextBlock Text="Custom Command" Style="{StaticResource SubtitleTextBlockStyle}" FontWeight="SemiBold" />
+                            <TextBlock Text="Send any Arduino command directly" FontSize="11" Foreground="Gray" />
+
+                            <StackPanel Orientation="Horizontal" Spacing="10">
+                                <TextBox x:Name="ArduinoCustomCommandBox" PlaceholderText="e.g., MOTOR_SPEED=200" Width="400" />
+                                <Button Content="Send" Click="SendCustomCommand_Click" Padding="12,8" Style="{StaticResource AccentButtonStyle}" />
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+
                 </StackPanel>
             </ScrollViewer>
         </Grid>
