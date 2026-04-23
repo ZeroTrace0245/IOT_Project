@@ -1000,7 +1000,7 @@
                                         <TextBlock Text="🔴 Limit Switch" FontWeight="Bold" FontSize="12" />
                                         <TextBlock Text="Pin 4" FontSize="10" Foreground="Gray" />
                                         <Border Padding="8" CornerRadius="4" Background="{ThemeResource SystemControlBackgroundAccentBrush}" Opacity="0.3">
-                                            <TextBlock x:Name="LimitSwitchStatus" Text="❌ Not Detected" FontSize="11" Foreground="Gray" />
+                                            <TextBlock x:Name="DetectionLimitSwitchStatus" Text="❌ Not Detected" FontSize="11" Foreground="Gray" />
                                         </Border>
                                         <TextBlock Text="ID: 0x01" FontSize="9" Foreground="LightGray" />
                                     </StackPanel>
@@ -1155,6 +1155,15 @@
                                     <Button Content="Read" Click="ReadObstacleSensor_Click" HorizontalAlignment="Stretch" />
                                 </StackPanel>
 
+                                <!-- Ultrasonic Distance Sensor -->
+                                <StackPanel Spacing="8">
+                                    <TextBlock Text="Ultrasonic Distance (Pins 10/11)" FontSize="12" FontWeight="SemiBold" />
+                                    <Border Background="{ThemeResource SystemControlBackgroundAccentBrush}" Padding="12" CornerRadius="6">
+                                        <TextBlock x:Name="ArduinoUltrasonicReadout" Text="--- cm" FontSize="14" Foreground="LimeGreen" TextAlignment="Center" />
+                                    </Border>
+                                    <Button Content="Read" Click="ReadUltrasonic_Click" HorizontalAlignment="Stretch" />
+                                </StackPanel>
+
                                 <!-- Pressure Sensor -->
                                 <StackPanel Spacing="8">
                                     <TextBlock Text="Pressure (I2C 0x76)" FontSize="12" FontWeight="SemiBold" />
@@ -1236,6 +1245,124 @@
                                 <TextBox x:Name="ArduinoCustomCommandBox" PlaceholderText="e.g., MOTOR_SPEED=200" Width="400" />
                                 <Button Content="Send" Click="SendCustomCommand_Click" Padding="12,8" Style="{StaticResource AccentButtonStyle}" />
                             </StackPanel>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- REAL-TIME SENSOR MONITORING DASHBOARD -->
+                    <Border Background="{ThemeResource SystemControlBackgroundAltHighBrush}" Padding="24" CornerRadius="12" BorderThickness="2" BorderBrush="{ThemeResource SystemControlForegroundAccentBrush}">
+                        <StackPanel Spacing="20">
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="⚡ REAL-TIME SENSOR MONITORING" Style="{StaticResource SubtitleTextBlockStyle}" FontWeight="Bold" Foreground="{ThemeResource SystemControlForegroundAccentBrush}" />
+                                <TextBlock Text="Live updates every 1 second - Monitor sensors as they update" FontSize="12" Foreground="Gray" />
+                            </StackPanel>
+
+                            <!-- Auto-Monitor Toggle -->
+                            <StackPanel Spacing="8">
+                                <ToggleSwitch x:Name="AutoMonitorToggle" Header="Enable Auto-Monitoring" Toggled="AutoMonitor_Toggled" IsOn="False" />
+                                <TextBlock Text="Auto-monitoring will update sensor readings every 1 second" FontSize="11" Foreground="LightGray" />
+                            </StackPanel>
+
+                            <!-- Three Sensor Monitoring Cards in Grid -->
+                            <Grid ColumnDefinitions="*, *, *" ColumnSpacing="15" RowSpacing="15">
+
+                                <!-- LIMIT SWITCH MONITOR -->
+                                <Border Background="{ThemeResource SystemControlBackgroundBaseLowBrush}" Padding="16" CornerRadius="10" BorderThickness="2" BorderBrush="SkyBlue" x:Name="LimitSwitchMonitorBorder">
+                                    <StackPanel Spacing="12">
+                                        <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                                            <TextBlock Text="🔴" FontSize="24" />
+                                            <TextBlock Text="LIMIT SWITCH (Pin 4)" FontSize="13" FontWeight="Bold" />
+                                        </StackPanel>
+
+                                        <Border Background="{ThemeResource SystemControlBackgroundAccentBrush}" Padding="12" CornerRadius="8">
+                                            <StackPanel Spacing="6">
+                                                <TextBlock x:Name="LimitSwitchStatus" Text="Status: OPEN" FontSize="12" Foreground="LimeGreen" FontWeight="Bold" />
+                                                <TextBlock x:Name="LimitSwitchTimestamp" Text="Last Update: --:--:--" FontSize="10" Foreground="LightGray" />
+                                                <ProgressRing x:Name="LimitSwitchIndicator" IsActive="False" Background="Transparent" />
+                                            </StackPanel>
+                                        </Border>
+
+                                        <Button Content="Read Now" Click="ReadLimitSwitch_Click" HorizontalAlignment="Stretch" Padding="8,6" FontSize="11" />
+                                    </StackPanel>
+                                </Border>
+
+                                <!-- ULTRASONIC SENSOR MONITOR -->
+                                <Border Background="{ThemeResource SystemControlBackgroundBaseLowBrush}" Padding="16" CornerRadius="10" BorderThickness="2" BorderBrush="LimeGreen" x:Name="UltrasonicMonitorBorder">
+                                    <StackPanel Spacing="12">
+                                        <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                                            <TextBlock Text="📏" FontSize="24" />
+                                            <TextBlock Text="ULTRASONIC (Pins 10/11)" FontSize="13" FontWeight="Bold" />
+                                        </StackPanel>
+
+                                        <Border Background="{ThemeResource SystemControlBackgroundAccentBrush}" Padding="12" CornerRadius="8">
+                                            <StackPanel Spacing="6">
+                                                <TextBlock x:Name="UltrasonicDistance" Text="Distance: --- cm" FontSize="16" Foreground="LimeGreen" FontWeight="Bold" />
+                                                <TextBlock x:Name="UltrasonicStatus" Text="Status: Ready" FontSize="11" Foreground="LightGray" />
+                                                <TextBlock x:Name="UltrasonicTimestamp" Text="Last Update: --:--:--" FontSize="10" Foreground="LightGray" />
+                                            </StackPanel>
+                                        </Border>
+
+                                        <Button Content="Read Now" Click="ReadUltrasonic_Click" HorizontalAlignment="Stretch" Padding="8,6" FontSize="11" />
+                                    </StackPanel>
+                                </Border>
+
+                                <!-- PRESSURE SENSOR MONITOR -->
+                                <Border Background="{ThemeResource SystemControlBackgroundBaseLowBrush}" Padding="16" CornerRadius="10" BorderThickness="2" BorderBrush="Orange" x:Name="PressureMonitorBorder">
+                                    <StackPanel Spacing="12">
+                                        <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                                            <TextBlock Text="📊" FontSize="24" />
+                                            <TextBlock Text="PRESSURE (Pin A0)" FontSize="13" FontWeight="Bold" />
+                                        </StackPanel>
+
+                                        <Border Background="{ThemeResource SystemControlBackgroundAccentBrush}" Padding="12" CornerRadius="8">
+                                            <StackPanel Spacing="6">
+                                                <TextBlock x:Name="PressureRaw" Text="Raw: --- (0-1023)" FontSize="12" Foreground="Orange" FontWeight="Bold" />
+                                                <TextBlock x:Name="PressureVoltage" Text="Voltage: --- V (0-5V)" FontSize="12" Foreground="Orange" FontWeight="Bold" />
+                                                <TextBlock x:Name="PressureTimestamp" Text="Last Update: --:--:--" FontSize="10" Foreground="LightGray" />
+                                            </StackPanel>
+                                        </Border>
+
+                                        <Button Content="Read Now" Click="ReadPressure_Click" HorizontalAlignment="Stretch" Padding="8,6" FontSize="11" />
+                                    </StackPanel>
+                                </Border>
+
+                            </Grid>
+
+                            <!-- Monitor Status -->
+                            <Border Background="{ThemeResource SystemControlForegroundBaseLowBrush}" Padding="12" CornerRadius="8" Opacity="0.2">
+                                <StackPanel Spacing="8">
+                                    <TextBlock Text="📊 Monitoring Status:" FontWeight="Bold" FontSize="11" />
+                                    <StackPanel Orientation="Horizontal" Spacing="20">
+                                        <StackPanel Spacing="2">
+                                            <TextBlock Text="Auto-Monitor:" FontSize="10" Foreground="Gray" />
+                                            <TextBlock x:Name="MonitoringStatusText" Text="OFF" FontSize="12" Foreground="LightGray" FontWeight="Bold" />
+                                        </StackPanel>
+                                        <StackPanel Spacing="2">
+                                            <TextBlock Text="Update Rate:" FontSize="10" Foreground="Gray" />
+                                            <TextBlock Text="1 second" FontSize="12" Foreground="LimeGreen" FontWeight="Bold" />
+                                        </StackPanel>
+                                        <StackPanel Spacing="2">
+                                            <TextBlock Text="Connection:" FontSize="10" Foreground="Gray" />
+                                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                                <InfoBadge x:Name="MonitorConnectionBadge" Height="8" Width="8" Background="Gray" />
+                                                <TextBlock x:Name="MonitorConnectionStatus" Text="Disconnected" FontSize="12" Foreground="Gray" FontWeight="Bold" />
+                                            </StackPanel>
+                                        </StackPanel>
+                                    </StackPanel>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Instructions -->
+                            <Border Background="{ThemeResource SystemControlBackgroundAccentBrush}" Padding="12" CornerRadius="8" Opacity="0.1">
+                                <StackPanel Spacing="8">
+                                    <TextBlock Text="📋 How to Use:" FontWeight="Bold" FontSize="11" />
+                                    <TextBlock Text="1. Toggle 'Enable Auto-Monitoring' to start real-time updates" FontSize="10" Foreground="Gray" />
+                                    <TextBlock Text="2. Sensor data will update every 1 second automatically" FontSize="10" Foreground="Gray" />
+                                    <TextBlock Text="3. Click 'Read Now' buttons for immediate on-demand readings" FontSize="10" Foreground="Gray" />
+                                    <TextBlock Text="4. Timestamps show when each sensor was last updated" FontSize="10" Foreground="Gray" />
+                                    <TextBlock Text="5. Color indicators show sensor status: Green=Active, Red=Inactive, Orange=Value" FontSize="10" Foreground="Gray" />
+                                </StackPanel>
+                            </Border>
+
                         </StackPanel>
                     </Border>
 

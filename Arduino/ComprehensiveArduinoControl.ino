@@ -6,13 +6,16 @@
 
 // ========== PIN DEFINITIONS ==========
 #define LIMIT_SWITCH_PIN 4
-#define MOTOR_PWM_PIN 8
-#define STEP_SIGNAL_PIN 3
-#define DIR_SIGNAL_PIN 2
-#define ENABLE_PIN 5
+#define HW201_OBSTACLE_PIN 6  // HW201 infrared obstacle sensor
+#define ULTRASONIC_TRIG_PIN 10  // Ultrasonic sensor trigger
+#define ULTRASONIC_ECHO_PIN 11  // Ultrasonic sensor echo
 #define PRESSURE_SENSOR_PIN A0
 #define ANALOG_IN_PIN A1
-#define HW201_OBSTACLE_PIN 6  // HW201 infrared obstacle sensor
+
+// ========== STEPPER MOTOR DRIVER PINS (TMC2209 or similar) ==========
+#define EN_PIN   8   // Enable pin (active LOW)
+#define STEP_PIN 9   // Step/Clock pin
+#define DIR_PIN  10  // Direction pin
 
 // ========== I2C ADDRESSES ==========
 #define PRESSURE_SENSOR_I2C_ADDR 0x76
@@ -24,21 +27,26 @@ int bufferIndex = 0;
 
 // ========== SYSTEM STATE ==========
 struct SystemState {
-  bool motorEnabled;
-  int motorSpeed;        // 0-255
-  int motorDirection;    // 1 = forward, -1 = reverse
-  bool stepperEnabled;
-  int stepperFrequency;  // Hz
+  bool stepperEnabled;           // Motor enabled/disabled
+  int stepperSpeed;              // Speed in microseconds (step delay)
+  bool stepperDirection;         // LOW = forward, HIGH = reverse
   bool limitSwitchTriggered;
-  bool obstacleDetected; // HW201 obstacle sensor
-  int pressureReading;   // 0-1023
-  unsigned long uptime;  // milliseconds
+  bool obstacleDetected;         // HW201 obstacle sensor
+  int ultrasonicDistance;        // Ultrasonic distance in cm
+  int pressureRaw;               // 0-1023 (raw analog)
+  float pressureVoltage;         // 0-5V (converted)
+  unsigned long uptime;          // milliseconds
   bool isRunning;
 };
 
 SystemState systemState = {
-  false, 0, 1, false, 0, false, false, 0, 0, true
+  false, 1000, LOW, false, false, 0, 0, 0.0, 0, true
 };
+
+// ========== MOTOR CONTROL VARIABLES ==========
+int stepDelayMicroseconds = 1000; // Default speed
+bool motorEnabled = false;
+bool motorDirection = LOW;        // LOW = forward, HIGH = reverse
 
 // ========== SETUP ==========
 void setup() {
@@ -78,6 +86,15 @@ void loop() {
 	}
   }
 
+  // Run stepper motor if enabled
+  if (motorEnabled) {
+	digitalWrite(DIR_PIN, motorDirection);
+	digitalWrite(STEP_PIN, HIGH);
+	delayMicroseconds(stepDelayMicroseconds);
+	digitalWrite(STEP_PIN, LOW);
+	delayMicroseconds(stepDelayMicroseconds);
+  }
+
   // Update sensor readings periodically
   static unsigned long lastSensorRead = 0;
   if (millis() - lastSensorRead >= 1000) {
@@ -88,26 +105,94 @@ void loop() {
   // Update system uptime
   systemState.uptime = millis();
 
-  delay(10);
+  delay(1);  // Reduced delay for better stepper performance
 }
 
 // ========== PIN INITIALIZATION ==========
 void initializePins() {
   // Digital inputs
   pinMode(LIMIT_SWITCH_PIN, INPUT_PULLUP);
-  pinMode(HW201_OBSTACLE_PIN, INPUT);  // HW201 infrared sensor
+  pinMode(HW201_OBSTACLE_PIN, INPUT);       // HW201 infrared sensor
+  pinMode(ULTRASONIC_ECHO_PIN, INPUT);      // Ultrasonic echo pin
 
-  // Digital outputs
-  pinMode(MOTOR_PWM_PIN, OUTPUT);
-  pinMode(STEP_SIGNAL_PIN, OUTPUT);
-  pinMode(DIR_SIGNAL_PIN, OUTPUT);
-  pinMode(ENABLE_PIN, OUTPUT);
+  // Stepper Motor Driver Pins
+  pinMode(EN_PIN, OUTPUT);                  // Enable (active LOW)
+  pinMode(STEP_PIN, OUTPUT);                // Step/Clock
+  pinMode(DIR_PIN, OUTPUT);                 // Direction
+  pinMode(ULTRASONIC_TRIG_PIN, OUTPUT);     // Ultrasonic trigger pin
 
   // Set default states
-  digitalWrite(MOTOR_PWM_PIN, LOW);
-  digitalWrite(STEP_SIGNAL_PIN, LOW);
-  digitalWrite(DIR_SIGNAL_PIN, LOW);
-  digitalWrite(ENABLE_PIN, HIGH);  // Disabled by default
+  digitalWrite(EN_PIN, HIGH);               // Driver disabled initially
+  digitalWrite(STEP_PIN, LOW);              // Step off
+  digitalWrite(DIR_PIN, LOW);               // Direction forward
+  digitalWrite(ULTRASONIC_TRIG_PIN, LOW);   // Trigger off
+}
+
+// ========== MOTOR CONTROL FUNCTIONS ==========
+void startMotor() {
+  motorEnabled = true;
+  systemState.stepperEnabled = true;
+  digitalWrite(EN_PIN, LOW);                // Enable driver
+
+  Serial.println("[MOTOR] Started");
+  Serial.println("MOTOR_STATUS=RUNNING");
+}
+
+void stopMotor() {
+  motorEnabled = false;
+  systemState.stepperEnabled = false;
+  digitalWrite(EN_PIN, HIGH);               // Disable driver
+
+  Serial.println("[MOTOR] Stopped");
+  Serial.println("MOTOR_STATUS=STOPPED");
+}
+
+void setMotorDirection(String dir) {
+  if (dir.equalsIgnoreCase("LEFT") || dir.equalsIgnoreCase("0")) {
+    motorDirection = LOW;
+    systemState.stepperDirection = LOW;
+    Serial.println("[MOTOR] Direction: LEFT (Forward)");
+  } 
+  else if (dir.equalsIgnoreCase("RIGHT") || dir.equalsIgnoreCase("1")) {
+    motorDirection = HIGH;
+    systemState.stepperDirection = HIGH;
+    Serial.println("[MOTOR] Direction: RIGHT (Reverse)");
+  }
+}
+
+void setMotorSpeed(int speed) {
+  // Speed is in microseconds (step delay)
+  // Typical range: 100 to 10000 microseconds
+  if (speed > 100) {
+    stepDelayMicroseconds = speed;
+    systemState.stepperSpeed = speed;
+
+    Serial.print("[MOTOR] Speed set to ");
+    Serial.print(speed);
+    Serial.println(" µs (microseconds)");
+    Serial.print("MOTOR_SPEED=");
+    Serial.println(speed);
+  } else {
+    Serial.println("[ERROR] Speed must be > 100 microseconds");
+  }
+}
+
+void getMotorStatus() {
+  Serial.println("[MOTOR] Status Report:");
+  Serial.print("  Enabled: ");
+  Serial.println(motorEnabled ? "YES" : "NO");
+  Serial.print("  Direction: ");
+  Serial.println(motorDirection == LOW ? "LEFT (Forward)" : "RIGHT (Reverse)");
+  Serial.print("  Speed: ");
+  Serial.print(stepDelayMicroseconds);
+  Serial.println(" µs");
+
+  Serial.print("MOTOR_STATUS_ENABLED=");
+  Serial.println(motorEnabled ? "1" : "0");
+  Serial.print("MOTOR_STATUS_DIRECTION=");
+  Serial.println(motorDirection == LOW ? "0" : "1");
+  Serial.print("MOTOR_STATUS_SPEED=");
+  Serial.println(stepDelayMicroseconds);
 }
 
 // ========== COMMAND PROCESSING ==========
@@ -140,18 +225,26 @@ void processCommand(char* command) {
 	setMotorSpeed(value);
   }
   else if (strcmp(token, "MOTOR_DIR") == 0) {
-	setMotorDirection(value);
+	// Parse direction string
+	if (valueStr != NULL) {
+	  setMotorDirection(String(valueStr));
+	}
   }
-  else if (strcmp(token, "MOTOR_ENABLE") == 0) {
-	setMotorEnable(value);
+  else if (strcmp(token, "MOTOR_START") == 0) {
+	startMotor();
   }
   else if (strcmp(token, "MOTOR_STOP") == 0) {
 	stopMotor();
   }
-  else if (strcmp(token, "STEP_PULSE") == 0) {
-	sendStepPulses(value);
+  else if (strcmp(token, "MOTOR_STATUS") == 0) {
+	getMotorStatus();
   }
-  else if (strcmp(token, "STEP_SPEED") == 0) {
+  else if (strcmp(token, "START") == 0) {
+	startMotor();
+  }
+  else if (strcmp(token, "STOP") == 0) {
+	stopMotor();
+  }
 	setStepperSpeed(value);
   }
   else if (strcmp(token, "LIMIT_CHECK") == 0) {
@@ -168,6 +261,9 @@ void processCommand(char* command) {
   }
   else if (strcmp(token, "OBSTACLE_CHECK") == 0) {
 	checkObstacleSensor();
+  }
+  else if (strcmp(token, "ULTRASONIC_READ") == 0) {
+	readUltrasonicSensor();
   }
   else if (strcmp(token, "DIGITAL_WRITE") == 0) {
 	// Format: DIGITAL_WRITE=pin,value
@@ -254,38 +350,26 @@ void stopMotor() {
   sendResponse("MOTOR_STOPPED");
 }
 
-// ========== STEPPER CONTROL ==========
+// ========== STEPPER CONTROL (Legacy - Driver handles this now) ==========
 void sendStepPulses(int count) {
-  if (count <= 0) {
-	sendError("Step count must be > 0");
-	return;
-  }
-
-  for (int i = 0; i < count; i++) {
-	digitalWrite(STEP_SIGNAL_PIN, HIGH);
-	delayMicroseconds(2);
-	digitalWrite(STEP_SIGNAL_PIN, LOW);
-	delayMicroseconds(500);
-  }
-
-  Serial.print("[STEPPER] Sent ");
-  Serial.print(count);
-  Serial.println(" pulses");
-  sendResponse("STEP_PULSES_OK");
+  // This function is now handled by the main stepper driver
+  // To send pulses, use MOTOR_SPEED and MOTOR_START commands
+  Serial.println("[STEPPER] Use MOTOR_START/STOP and MOTOR_SPEED to control stepper");
+  Serial.println("Step pulses are now generated continuously by the driver");
 }
 
 void setStepperSpeed(int frequencyHz) {
-  if (frequencyHz < 1 || frequencyHz > 1000) {
-	sendError("Frequency must be 1-1000 Hz");
+  // Convert Hz to microsecond delay
+  // Hz = 1,000,000 / (2 * delayMicroseconds)
+  // So: delayMicroseconds = 500,000 / Hz
+
+  if (frequencyHz < 1 || frequencyHz > 5000) {
+	sendError("Frequency must be 1-5000 Hz");
 	return;
   }
 
-  systemState.stepperFrequency = frequencyHz;
-
-  Serial.print("[STEPPER] Speed set to: ");
-  Serial.print(frequencyHz);
-  Serial.println(" Hz");
-  sendResponse("STEPPER_SPEED_OK");
+  int delayUs = 500000 / frequencyHz;
+  setMotorSpeed(delayUs);
 }
 
 // ========== SENSOR READING ==========
@@ -311,21 +395,62 @@ void checkObstacleSensor() {
   Serial.println(state);
 }
 
-void readPressure() {
-  Wire.beginTransmission(PRESSURE_SENSOR_I2C_ADDR);
-  byte error = Wire.endTransmission();
+void readUltrasonicSensor() {
+  // Send trigger pulse
+  digitalWrite(ULTRASONIC_TRIG_PIN, LOW);
+  delayMicroseconds(2);
+  digitalWrite(ULTRASONIC_TRIG_PIN, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(ULTRASONIC_TRIG_PIN, LOW);
 
-  if (error == 0) {
-	int pressure = analogRead(PRESSURE_SENSOR_PIN);
-	systemState.pressureReading = pressure;
+  // Read echo pulse duration
+  long duration = pulseIn(ULTRASONIC_ECHO_PIN, HIGH);
 
-	Serial.print("[PRESSURE] Reading: ");
-	Serial.println(pressure);
-	Serial.print("PRESSURE=");
-	Serial.println(pressure);
-  } else {
-	sendError("Pressure sensor not found");
+  // Calculate distance (duration * speed of sound / 2)
+  int distance = duration * 0.034 / 2;
+
+  // Constrain to valid range (0-400cm typical for HC-SR04)
+  if (distance < 0 || distance > 400) {
+    distance = -1;  // Invalid reading
   }
+
+  systemState.ultrasonicDistance = distance;
+
+  // Print formatted response
+  Serial.print("[ULTRASONIC] Distance: ");
+  if (distance == -1) {
+    Serial.println("OUT OF RANGE");
+    Serial.println("ULTRASONIC_DISTANCE=-1");
+  } else {
+    Serial.print(distance);
+    Serial.println(" cm");
+    Serial.print("ULTRASONIC_DISTANCE=");
+    Serial.println(distance);
+  }
+}
+
+void readPressure() {
+  // Read raw analog value from pressure sensor (A0)
+  int rawValue = analogRead(PRESSURE_SENSOR_PIN);
+
+  // Convert raw value to voltage (0-1023 maps to 0-5V)
+  float voltage = rawValue * (5.0 / 1023.0);
+
+  // Store raw value in system state
+  systemState.pressureReading = rawValue;
+
+  // Print formatted response
+  Serial.print("[PRESSURE] Raw Value: ");
+  Serial.print(rawValue);
+  Serial.print("   Voltage: ");
+  Serial.print(voltage);
+  Serial.println("V");
+
+  // Print machine-readable values
+  Serial.print("PRESSURE_RAW=");
+  Serial.println(rawValue);
+  Serial.print("PRESSURE_VOLTAGE=");
+  Serial.println(voltage);
 }
 
 void readAnalog(int pin) {
@@ -439,24 +564,34 @@ void printStatus() {
   Serial.println("\n╔════════════════════════════════════════════╗");
   Serial.println("║          SYSTEM STATUS REPORT             ║");
   Serial.println("╠════════════════════════════════════════════╣");
-  Serial.print("║ Motor Speed: ");
-  Serial.print(systemState.motorSpeed);
-  Serial.println("                        ║");
-  Serial.print("║ Motor Direction: ");
-  Serial.print(systemState.motorDirection == 1 ? "FORWARD" : "REVERSE");
-  Serial.println("               ║");
   Serial.print("║ Motor Enabled: ");
-  Serial.print(systemState.motorEnabled ? "YES" : "NO");
+  Serial.print(motorEnabled ? "YES" : "NO");
   Serial.println("                     ║");
+  Serial.print("║ Motor Direction: ");
+  Serial.print(motorDirection == LOW ? "LEFT (Forward)" : "RIGHT (Reverse)");
+  Serial.println("  ║");
+  Serial.print("║ Motor Speed: ");
+  Serial.print(stepDelayMicroseconds);
+  Serial.println(" µs            ║");
   Serial.print("║ Limit Switch: ");
   Serial.print(systemState.limitSwitchTriggered ? "TRIGGERED" : "OPEN");
   Serial.println("               ║");
   Serial.print("║ Obstacle Detected: ");
   Serial.print(systemState.obstacleDetected ? "YES" : "NO");
   Serial.println("              ║");
-  Serial.print("║ Pressure: ");
-  Serial.print(systemState.pressureReading);
-  Serial.println("                         ║");
+  Serial.print("║ Ultrasonic Distance: ");
+  if (systemState.ultrasonicDistance == -1) {
+    Serial.println("OUT OF RANGE        ║");
+  } else {
+    Serial.print(systemState.ultrasonicDistance);
+    Serial.println(" cm               ║");
+  }
+  Serial.print("║ Pressure (Raw): ");
+  Serial.print(systemState.pressureRaw);
+  Serial.println("                   ║");
+  Serial.print("║ Pressure (Voltage): ");
+  Serial.print(systemState.pressureVoltage);
+  Serial.println("V                ║");
   Serial.print("║ Uptime: ");
   Serial.print(systemState.uptime / 1000);
   Serial.println(" seconds                ║");
@@ -467,19 +602,19 @@ void printHelp() {
   Serial.println("\n╔════════════════════════════════════════════╗");
   Serial.println("║         COMMAND REFERENCE GUIDE            ║");
   Serial.println("╠════════════════════════════════════════════╣");
-  Serial.println("║ MOTOR CONTROL:                             ║");
-  Serial.println("║  MOTOR_SPEED=0-255      (Set speed)        ║");
-  Serial.println("║  MOTOR_DIR=0|1          (Direction)        ║");
-  Serial.println("║  MOTOR_ENABLE=0|1       (Enable/Disable)   ║");
-  Serial.println("║  MOTOR_STOP             (Emergency stop)   ║");
-  Serial.println("║                                             ║");
-  Serial.println("║ STEPPER CONTROL:                           ║");
-  Serial.println("║  STEP_PULSE=count       (Send pulses)      ║");
-  Serial.println("║  STEP_SPEED=Hz          (Set frequency)    ║");
+  Serial.println("║ STEPPER MOTOR CONTROL:                     ║");
+  Serial.println("║  START                  (Start motor)      ║");
+  Serial.println("║  STOP                   (Stop motor)       ║");
+  Serial.println("║  MOTOR_START            (Start motor)      ║");
+  Serial.println("║  MOTOR_STOP             (Stop motor)       ║");
+  Serial.println("║  MOTOR_DIR=LEFT|RIGHT   (Set direction)    ║");
+  Serial.println("║  MOTOR_SPEED=xxx        (Set speed µs)     ║");
+  Serial.println("║  MOTOR_STATUS           (Get status)       ║");
   Serial.println("║                                             ║");
   Serial.println("║ SENSOR READING:                            ║");
   Serial.println("║  LIMIT_CHECK            (Read limit)       ║");
   Serial.println("║  OBSTACLE_CHECK         (HW201 sensor)     ║");
+  Serial.println("║  ULTRASONIC_READ        (Distance sensor)  ║");
   Serial.println("║  PRESSURE_READ          (Read pressure)    ║");
   Serial.println("║  ANALOG_READ=pin        (Read analog)      ║");
   Serial.println("║  DIGITAL_READ=pin       (Read digital)     ║");
@@ -492,8 +627,7 @@ void printHelp() {
   Serial.println("║  STATUS                 (Show status)      ║");
   Serial.println("║  GET_STATE              (JSON state)       ║");
   Serial.println("║  UPTIME                 (System uptime)    ║");
-  Serial.println("║  SENSOR_SCAN            (Find sensors)     ║");
-  Serial.println("║  HOME                   (Go home)          ║");
+  Serial.println("║  HOME                   (Go to home)       ║");
   Serial.println("║  RESET                  (Reset system)     ║");
   Serial.println("║  HELP                   (This help)        ║");
   Serial.println("║  PING                   (Echo test)        ║");
@@ -547,17 +681,25 @@ void sensorScan() {
 void goHome() {
   Serial.println("[HOME] Moving to home position...");
 
-  // Move stepper until limit switch is triggered
+  // Enable motor and move toward limit switch
+  motorEnabled = true;
+  motorDirection = LOW;  // Move in one direction
+  digitalWrite(EN_PIN, LOW);  // Enable driver
+
   int maxSteps = 10000;
   int stepCount = 0;
 
   while (digitalRead(LIMIT_SWITCH_PIN) == HIGH && stepCount < maxSteps) {
-	digitalWrite(STEP_SIGNAL_PIN, HIGH);
-	delayMicroseconds(2);
-	digitalWrite(STEP_SIGNAL_PIN, LOW);
-	delayMicroseconds(500);
+	digitalWrite(DIR_PIN, motorDirection);
+	digitalWrite(STEP_PIN, HIGH);
+	delayMicroseconds(stepDelayMicroseconds);
+	digitalWrite(STEP_PIN, LOW);
+	delayMicroseconds(stepDelayMicroseconds);
 	stepCount++;
   }
+
+  motorEnabled = false;
+  digitalWrite(EN_PIN, HIGH);  // Disable driver
 
   Serial.print("[HOME] Complete - ");
   Serial.print(stepCount);
@@ -572,18 +714,22 @@ void printUptime() {
 
 void sendSystemState() {
   Serial.print("STATE={");
-  Serial.print("\"motorSpeed\":");
-  Serial.print(systemState.motorSpeed);
-  Serial.print(",\"motorDir\":");
-  Serial.print(systemState.motorDirection);
-  Serial.print(",\"motorEnabled\":");
-  Serial.print(systemState.motorEnabled ? "true" : "false");
+  Serial.print("\"motorEnabled\":");
+  Serial.print(motorEnabled ? "true" : "false");
+  Serial.print(",\"motorDirection\":");
+  Serial.print(motorDirection == LOW ? "\"LEFT\"" : "\"RIGHT\"");
+  Serial.print(",\"motorSpeed\":");
+  Serial.print(stepDelayMicroseconds);
   Serial.print(",\"limitTriggered\":");
   Serial.print(systemState.limitSwitchTriggered ? "true" : "false");
   Serial.print(",\"obstacleDetected\":");
   Serial.print(systemState.obstacleDetected ? "true" : "false");
-  Serial.print(",\"pressure\":");
-  Serial.print(systemState.pressureReading);
+  Serial.print(",\"ultrasonicDistance\":");
+  Serial.print(systemState.ultrasonicDistance);
+  Serial.print(",\"pressureRaw\":");
+  Serial.print(systemState.pressureRaw);
+  Serial.print(",\"pressureVoltage\":");
+  Serial.print(systemState.pressureVoltage);
   Serial.print(",\"uptime\":");
   Serial.print(systemState.uptime / 1000);
   Serial.println("}");
@@ -593,7 +739,24 @@ void sendSystemState() {
 void updateSensorReadings() {
   systemState.limitSwitchTriggered = (digitalRead(LIMIT_SWITCH_PIN) == LOW);
   systemState.obstacleDetected = (digitalRead(HW201_OBSTACLE_PIN) == LOW);
-  systemState.pressureReading = analogRead(PRESSURE_SENSOR_PIN);
+
+  // Read pressure sensor with voltage conversion
+  int rawValue = analogRead(PRESSURE_SENSOR_PIN);
+  systemState.pressureRaw = rawValue;
+  systemState.pressureVoltage = rawValue * (5.0 / 1023.0);
+
+  // Update ultrasonic reading
+  digitalWrite(ULTRASONIC_TRIG_PIN, LOW);
+  delayMicroseconds(2);
+  digitalWrite(ULTRASONIC_TRIG_PIN, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(ULTRASONIC_TRIG_PIN, LOW);
+  long duration = pulseIn(ULTRASONIC_ECHO_PIN, HIGH);
+  int distance = duration * 0.034 / 2;
+  if (distance < 0 || distance > 400) {
+    distance = -1;
+  }
+  systemState.ultrasonicDistance = distance;
 }
 
 void trimString(char* str) {

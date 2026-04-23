@@ -44,7 +44,13 @@ namespace IOT_APP
         private int _limitSwitchPressCount = 0;
         private int _lastLimitSwitchState = 1;  // 1 = HIGH (open), 0 = LOW (pressed)
 
-        // Motor Control (Pin 8)
+        // Pressure Sensor
+        private int _lastPressureRaw = 0;
+        private float _lastPressureVoltage = 0.0f;
+
+        // Auto-Monitoring System
+        private DispatcherTimer _autoMonitorTimer;
+        private bool _isAutoMonitoring = false;
         private int _currentMotorSpeed = 0;
         private ObservableCollection<string> _motorActivityLogCollection = new();
 
@@ -269,11 +275,57 @@ namespace IOT_APP
                 {
                     MeasurementLabel.Text = rawData.Replace("STATUS=", "");
                 }
+                else if (rawData.StartsWith("PRESSURE_RAW="))
+                {
+                    if (int.TryParse(rawData.Replace("PRESSURE_RAW=", ""), out int rawValue))
+                    {
+                        // Store raw value and wait for voltage
+                        _lastPressureRaw = rawValue;
+                    }
+                }
+                else if (rawData.StartsWith("PRESSURE_VOLTAGE="))
+                {
+                    if (float.TryParse(rawData.Replace("PRESSURE_VOLTAGE=", ""), out float voltage))
+                    {
+                        // Display both raw and voltage values
+                        if (MeasurementLabel != null)
+                        {
+                            MeasurementLabel.Text = $"Pressure: {_lastPressureRaw} (Raw) | {voltage:F2}V";
+                        }
+
+                        // Update real-time monitoring display
+                        _lastPressureVoltage = voltage;
+                        UpdatePressureMonitor(_lastPressureRaw, voltage);
+                    }
+                }
                 else if (rawData.StartsWith("PRESSURE="))
                 {
                     if (int.TryParse(rawData.Replace("PRESSURE=", ""), out int pressure))
                     {
                         MeasurementLabel.Text = $"Pressure: {pressure} (0-1023)";
+                    }
+                }
+                else if (rawData.StartsWith("OBSTACLE_STATE="))
+                {
+                    if (int.TryParse(rawData.Replace("OBSTACLE_STATE=", ""), out int state))
+                    {
+                        bool isTriggered = (state == 0); // LOW = obstacle detected
+                        UpdateLimitSwitchMonitor(isTriggered);
+                    }
+                }
+                else if (rawData.StartsWith("LIMIT_STATE="))
+                {
+                    if (int.TryParse(rawData.Replace("LIMIT_STATE=", ""), out int state))
+                    {
+                        bool isTriggered = (state == 0); // LOW = triggered
+                        UpdateLimitSwitchMonitor(isTriggered);
+                    }
+                }
+                else if (rawData.StartsWith("ULTRASONIC_DISTANCE="))
+                {
+                    if (int.TryParse(rawData.Replace("ULTRASONIC_DISTANCE=", ""), out int distance))
+                    {
+                        UpdateUltrasonicMonitor(distance);
                     }
                 }
                 else if (rawData.StartsWith("PONG="))
@@ -900,6 +952,7 @@ namespace IOT_APP
         private void GoHome_Click(object sender, RoutedEventArgs e) { WriteToSerial("HOME"); }
         private void ReadLimitSwitch_Click(object sender, RoutedEventArgs e) { WriteToSerial("LIMIT_CHECK"); }
         private void ReadObstacleSensor_Click(object sender, RoutedEventArgs e) { WriteToSerial("OBSTACLE_CHECK"); }
+        private void ReadUltrasonic_Click(object sender, RoutedEventArgs e) { WriteToSerial("ULTRASONIC_READ"); }
         private void ReadPressure_Click(object sender, RoutedEventArgs e) { WriteToSerial("PRESSURE_READ"); }
         private void ReadAnalog_Click(object sender, RoutedEventArgs e) { WriteToSerial("ANALOG_READ=0"); }
         private void WriteDigital_Click(object sender, RoutedEventArgs e) { WriteToSerial("DIGITAL_WRITE=7,1"); }
@@ -1011,5 +1064,120 @@ namespace IOT_APP
             }
             catch { /* Write error handling */ }
         }
+
+        // ========== REAL-TIME SENSOR MONITORING ==========
+
+        private void AutoMonitor_Toggled(object sender, RoutedEventArgs e)
+        {
+            ToggleSwitch toggle = sender as ToggleSwitch;
+            if (toggle == null) return;
+
+            _isAutoMonitoring = toggle.IsOn;
+
+            if (_isAutoMonitoring)
+            {
+                StartAutoMonitoring();
+            }
+            else
+            {
+                StopAutoMonitoring();
+            }
+        }
+
+        private void StartAutoMonitoring()
+        {
+            _isAutoMonitoring = true;
+
+            // Update connection status
+            if (ConnectionBadge != null)
+                ConnectionBadge.Background = new Microsoft.UI.Xaml.Media.SolidColorBrush(
+                    _serialPort?.IsOpen == true ? Microsoft.UI.Colors.LimeGreen : Microsoft.UI.Colors.Orange);
+
+            // Initialize and start timer
+            _autoMonitorTimer = new DispatcherTimer();
+            _autoMonitorTimer.Interval = TimeSpan.FromSeconds(1);
+            _autoMonitorTimer.Tick += AutoMonitor_Tick;
+            _autoMonitorTimer.Start();
+
+            DispatcherQueue.TryEnqueue(() =>
+            {
+                string timestamp = DateTime.Now.ToString("HH:mm:ss");
+                SerialOutputLog.Insert(0, $"[{timestamp}] ⚡ Auto-Monitoring STARTED - Reading all sensors every 1 second");
+            });
+        }
+
+        private void StopAutoMonitoring()
+        {
+            _isAutoMonitoring = false;
+
+            if (_autoMonitorTimer != null)
+            {
+                _autoMonitorTimer.Stop();
+                _autoMonitorTimer = null;
+            }
+
+            DispatcherQueue.TryEnqueue(() =>
+            {
+                string timestamp = DateTime.Now.ToString("HH:mm:ss");
+                SerialOutputLog.Insert(0, $"[{timestamp}] ⛔ Auto-Monitoring STOPPED");
+            });
+        }
+
+        private void AutoMonitor_Tick(object sender, object e)
+        {
+            // Read all three sensors in sequence
+            WriteToSerial("LIMIT_CHECK");
+            System.Threading.Thread.Sleep(100);
+            WriteToSerial("ULTRASONIC_READ");
+            System.Threading.Thread.Sleep(100);
+            WriteToSerial("PRESSURE_READ");
+        }
+
+        // Update monitor displays when data is received
+        private void UpdateLimitSwitchMonitor(bool isTriggered)
+        {
+            DispatcherQueue.TryEnqueue(() =>
+            {
+                string timestamp = DateTime.Now.ToString("HH:mm:ss");
+                string status = isTriggered ? "⚠️ TRIGGERED" : "✓ OPEN";
+
+                if (MeasurementLabel != null)
+                    MeasurementLabel.Text = $"[LIMIT SWITCH] {status} (Updated: {timestamp})";
+            });
+        }
+
+        private void UpdateUltrasonicMonitor(int distance)
+        {
+            DispatcherQueue.TryEnqueue(() =>
+            {
+                string timestamp = DateTime.Now.ToString("HH:mm:ss");
+                string distanceText = distance == -1 ? "OUT OF RANGE" : $"{distance} cm";
+                string status = "";
+
+                if (distance < 0)
+                    status = "⚠️ ERROR";
+                else if (distance < 10)
+                    status = "⚠️ VERY CLOSE";
+                else if (distance < 50)
+                    status = "📏 CLOSE";
+                else
+                    status = "✓ NORMAL";
+
+                if (MeasurementLabel != null)
+                    MeasurementLabel.Text = $"[ULTRASONIC] {distanceText} {status} (Updated: {timestamp})";
+            });
+        }
+
+        private void UpdatePressureMonitor(int rawValue, float voltage)
+        {
+            DispatcherQueue.TryEnqueue(() =>
+            {
+                string timestamp = DateTime.Now.ToString("HH:mm:ss");
+
+                if (MeasurementLabel != null)
+                    MeasurementLabel.Text = $"[PRESSURE] Raw: {rawValue} | Voltage: {voltage:F2}V (Updated: {timestamp})";
+            });
+        }
     }
 }
+
