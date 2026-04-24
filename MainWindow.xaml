@@ -205,29 +205,36 @@
                                 <TextBlock Text="Automated scan: Detects pressure → Moves motor forward → Measures with ultrasonic → Returns to home" FontSize="11" Foreground="Gray" />
                             </StackPanel>
 
-                            <!-- Scan Status -->
-                            <Border Background="{ThemeResource SystemControlBackgroundBaseLowBrush}" Padding="16" CornerRadius="8" BorderThickness="1" BorderBrush="{ThemeResource SystemControlForegroundBaseLowBrush}">
-                                <Grid ColumnDefinitions="*, *, *" ColumnSpacing="20">
-                                    <!-- Scan State -->
-                                    <StackPanel Spacing="6">
+                            <!-- Scan Status (Improved Layout) -->
+                            <StackPanel Spacing="10">
+                                <!-- Row 1: Scan State -->
+                                <Border Background="{ThemeResource SystemControlBackgroundBaseLowBrush}" Padding="12" CornerRadius="8" BorderThickness="1" BorderBrush="{ThemeResource SystemControlForegroundBaseLowBrush}">
+                                    <StackPanel Spacing="4">
                                         <TextBlock Text="Scan State:" FontSize="10" Foreground="Gray" FontWeight="SemiBold" />
                                         <TextBlock x:Name="ScanStateLabel" Text="IDLE - Ready" FontSize="13" FontWeight="Bold" Foreground="LimeGreen" />
                                     </StackPanel>
+                                </Border>
 
-                                    <!-- Scan Progress -->
-                                    <StackPanel Spacing="6">
-                                        <TextBlock Text="Progress:" FontSize="10" Foreground="Gray" FontWeight="SemiBold" />
-                                        <ProgressBar x:Name="ScanProgressBar" Value="0" Maximum="100" Height="6" CornerRadius="3" />
-                                        <TextBlock x:Name="ScanProgressLabel" Text="0%" FontSize="11" Foreground="{ThemeResource SystemControlForegroundAccentBrush}" />
-                                    </StackPanel>
+                                <!-- Row 2: Progress and Time (Side by side) -->
+                                <Grid ColumnDefinitions="*, *" ColumnSpacing="15" RowSpacing="10">
+                                    <!-- Progress Column -->
+                                    <Border Background="{ThemeResource SystemControlBackgroundBaseLowBrush}" Padding="12" CornerRadius="8" BorderThickness="1" BorderBrush="{ThemeResource SystemControlForegroundBaseLowBrush}">
+                                        <StackPanel Spacing="6">
+                                            <TextBlock Text="Progress:" FontSize="10" Foreground="Gray" FontWeight="SemiBold" />
+                                            <ProgressBar x:Name="ScanProgressBar" Value="0" Maximum="100" Height="8" CornerRadius="4" />
+                                            <TextBlock x:Name="ScanProgressLabel" Text="0%" FontSize="11" Foreground="{ThemeResource SystemControlForegroundAccentBrush}" />
+                                        </StackPanel>
+                                    </Border>
 
-                                    <!-- Scan Time -->
-                                    <StackPanel Spacing="6">
-                                        <TextBlock Text="Elapsed Time:" FontSize="10" Foreground="Gray" FontWeight="SemiBold" />
-                                        <TextBlock x:Name="ScanTimeLabel" Text="0s" FontSize="13" FontWeight="Bold" Foreground="{ThemeResource SystemControlForegroundAccentBrush}" />
-                                    </StackPanel>
+                                    <!-- Time Column -->
+                                    <Border Background="{ThemeResource SystemControlBackgroundBaseLowBrush}" Padding="12" CornerRadius="8" BorderThickness="1" BorderBrush="{ThemeResource SystemControlForegroundBaseLowBrush}">
+                                        <StackPanel Spacing="6">
+                                            <TextBlock Text="Elapsed Time:" FontSize="10" Foreground="Gray" FontWeight="SemiBold" />
+                                            <TextBlock x:Name="ScanTimeLabel" Text="0s" FontSize="13" FontWeight="Bold" Foreground="{ThemeResource SystemControlForegroundAccentBrush}" />
+                                        </StackPanel>
+                                    </Border>
                                 </Grid>
-                            </Border>
+                            </StackPanel>
 
                             <!-- Scan Controls -->
                             <StackPanel Spacing="12">
