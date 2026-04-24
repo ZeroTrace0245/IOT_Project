@@ -100,7 +100,7 @@
 
                 <TextBlock Text="Analytics Overview" Style="{StaticResource TitleTextBlockStyle}" FontWeight="SemiLight" />
 
-                <Grid ColumnDefinitions="*, *" ColumnSpacing="25" RowDefinitions="Auto, Auto" RowSpacing="25">
+                <Grid ColumnDefinitions="*, *" ColumnSpacing="25" RowDefinitions="Auto, Auto, Auto, Auto" RowSpacing="25">
 
                     <!-- Motor Configuration Card -->
                     <Border Grid.Row="0" Grid.Column="0" Background="{ThemeResource SystemControlBackgroundAltHighBrush}" Padding="24" CornerRadius="12" BorderThickness="1" BorderBrush="{ThemeResource SystemControlForegroundBaseLowBrush}">
@@ -149,8 +149,130 @@
                         </StackPanel>
                     </Border>
 
+                    <!-- Motor Distance Control Card (NEW) -->
+                    <Border Grid.Row="1" Grid.Column="0" Background="{ThemeResource SystemControlBackgroundAltHighBrush}" Padding="24" CornerRadius="12" BorderThickness="1" BorderBrush="{ThemeResource SystemControlForegroundBaseLowBrush}">
+                        <StackPanel Spacing="15">
+                            <TextBlock Text="🏃 Motor Distance Control" Style="{StaticResource SubtitleTextBlockStyle}" FontWeight="SemiBold" />
+                            <TextBlock Text="Move motor by exact distance (cm)" FontSize="11" Foreground="Gray" />
+
+                            <!-- Distance Input -->
+                            <StackPanel Spacing="8">
+                                <TextBlock Text="Distance (cm)" FontSize="11" FontWeight="SemiBold" />
+                                <StackPanel Orientation="Horizontal" Spacing="10">
+                                    <NumberBox x:Name="MotorDistanceBox" Value="5" Minimum="0.1" Maximum="50" SpinButtonPlacementMode="Inline" Width="100" ValueChanged="MotorDistanceBox_ValueChanged" />
+                                    <TextBlock Text="cm" VerticalAlignment="Center" FontSize="12" Foreground="Gray" />
+                                </StackPanel>
+                            </StackPanel>
+
+                            <!-- Calculated Steps -->
+                            <StackPanel Spacing="8">
+                                <TextBlock Text="Calculated Steps" FontSize="11" FontWeight="SemiBold" />
+                                <Border Background="{ThemeResource SystemControlBackgroundBaseLowBrush}" Padding="12" CornerRadius="6" BorderThickness="1" BorderBrush="{ThemeResource SystemControlForegroundBaseLowBrush}">
+                                    <TextBlock x:Name="CalculatedStepsLabel" Text="1250 steps" FontSize="14" FontWeight="Bold" Foreground="{ThemeResource SystemControlForegroundAccentBrush}" />
+                                </Border>
+                            </StackPanel>
+
+                            <!-- Direction -->
+                            <StackPanel Spacing="8">
+                                <TextBlock Text="Direction" FontSize="11" FontWeight="SemiBold" />
+                                <StackPanel Orientation="Horizontal" Spacing="15">
+                                    <RadioButton x:Name="MoveForwardRadio" Content="Forward" IsChecked="True" />
+                                    <RadioButton x:Name="MoveReverseRadio" Content="Reverse" />
+                                </StackPanel>
+                            </StackPanel>
+
+                            <!-- Movement Buttons -->
+                            <StackPanel Orientation="Horizontal" Spacing="10" Margin="0,10,0,0">
+                                <Button Content="Move Now" Click="MoveMotorDistance_Click" Style="{StaticResource AccentButtonStyle}" HorizontalAlignment="Stretch" Padding="0,10" />
+                                <Button Content="Stop" Click="StopMotor_Click" Padding="0,10" />
+                            </StackPanel>
+
+                            <!-- Status -->
+                            <Border Background="{ThemeResource SystemControlForegroundBaseLowBrush}" Padding="12" CornerRadius="6" Opacity="0.2">
+                                <StackPanel Spacing="6">
+                                    <TextBlock Text="Movement Time:" FontSize="10" Foreground="Gray" />
+                                    <TextBlock x:Name="MovementTimeLabel" Text="Est. 6.25 seconds" FontSize="11" FontWeight="SemiBold" />
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Automatic Foot Scanning Panel (NEW) -->
+                    <Border Grid.Row="2" Grid.ColumnSpan="2" Background="{ThemeResource SystemControlBackgroundAltHighBrush}" Padding="24" CornerRadius="12" BorderThickness="2" BorderBrush="#FF0099FF">
+                        <StackPanel Spacing="15">
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="🔴 AUTOMATIC FOOT SCANNING" Style="{StaticResource SubtitleTextBlockStyle}" FontWeight="Bold" Foreground="#FF0099FF" />
+                                <TextBlock Text="Automated scan: Detects pressure → Moves motor forward → Measures with ultrasonic → Returns to home" FontSize="11" Foreground="Gray" />
+                            </StackPanel>
+
+                            <!-- Scan Status -->
+                            <Border Background="{ThemeResource SystemControlBackgroundBaseLowBrush}" Padding="16" CornerRadius="8" BorderThickness="1" BorderBrush="{ThemeResource SystemControlForegroundBaseLowBrush}">
+                                <Grid ColumnDefinitions="*, *, *" ColumnSpacing="20">
+                                    <!-- Scan State -->
+                                    <StackPanel Spacing="6">
+                                        <TextBlock Text="Scan State:" FontSize="10" Foreground="Gray" FontWeight="SemiBold" />
+                                        <TextBlock x:Name="ScanStateLabel" Text="IDLE - Ready" FontSize="13" FontWeight="Bold" Foreground="LimeGreen" />
+                                    </StackPanel>
+
+                                    <!-- Scan Progress -->
+                                    <StackPanel Spacing="6">
+                                        <TextBlock Text="Progress:" FontSize="10" Foreground="Gray" FontWeight="SemiBold" />
+                                        <ProgressBar x:Name="ScanProgressBar" Value="0" Maximum="100" Height="6" CornerRadius="3" />
+                                        <TextBlock x:Name="ScanProgressLabel" Text="0%" FontSize="11" Foreground="{ThemeResource SystemControlForegroundAccentBrush}" />
+                                    </StackPanel>
+
+                                    <!-- Scan Time -->
+                                    <StackPanel Spacing="6">
+                                        <TextBlock Text="Elapsed Time:" FontSize="10" Foreground="Gray" FontWeight="SemiBold" />
+                                        <TextBlock x:Name="ScanTimeLabel" Text="0s" FontSize="13" FontWeight="Bold" Foreground="{ThemeResource SystemControlForegroundAccentBrush}" />
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
+
+                            <!-- Scan Controls -->
+                            <StackPanel Spacing="12">
+                                <TextBlock Text="Scan Controls" FontSize="11" FontWeight="SemiBold" />
+                                <StackPanel Orientation="Horizontal" Spacing="10">
+                                    <Button x:Name="ScanStartButton" Content="▶ Start Scan" Click="StartAutoScan_Click" Style="{StaticResource AccentButtonStyle}" Padding="12,8" MinWidth="120" />
+                                    <Button x:Name="ScanStopButton" Content="⏹ Stop Scan" Click="StopAutoScan_Click" Padding="12,8" MinWidth="120" IsEnabled="False" />
+                                    <Button Content="? Status" Click="GetScanStatus_Click" Padding="12,8" />
+                                </StackPanel>
+                            </StackPanel>
+
+                            <!-- Sensor Thresholds -->
+                            <Border Background="{ThemeResource SystemControlForegroundBaseLowBrush}" Padding="12" CornerRadius="6" Opacity="0.1">
+                                <StackPanel Spacing="8">
+                                    <TextBlock Text="⚙️ Sensor Thresholds" FontSize="10" FontWeight="SemiBold" />
+                                    <Grid ColumnDefinitions="*, *" ColumnSpacing="15">
+                                        <StackPanel Spacing="4">
+                                            <TextBlock Text="Pressure Threshold:" FontSize="9" Foreground="Gray" />
+                                            <TextBlock Text="Raw Value > 500" FontSize="10" />
+                                        </StackPanel>
+                                        <StackPanel Spacing="4">
+                                            <TextBlock Text="Ultrasonic Detection:" FontSize="9" Foreground="Gray" />
+                                            <TextBlock Text="Distance ≤ 15 cm" FontSize="10" />
+                                        </StackPanel>
+                                    </Grid>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Scan Workflow -->
+                            <Border Background="{ThemeResource SystemControlForegroundBaseLowBrush}" Padding="12" CornerRadius="6" Opacity="0.15">
+                                <StackPanel Spacing="8">
+                                    <TextBlock Text="📋 Scan Workflow" FontSize="10" FontWeight="SemiBold" />
+                                    <TextBlock Text="1. Press START → System waits for foot" FontSize="9" Foreground="Gray" />
+                                    <TextBlock Text="2. Place foot on scanner → Pressure sensor triggers" FontSize="9" Foreground="Gray" />
+                                    <TextBlock Text="3. Motor moves forward → Ribbon extends" FontSize="9" Foreground="Gray" />
+                                    <TextBlock Text="4. Ultrasonic measures foot → Data collected" FontSize="9" Foreground="Gray" />
+                                    <TextBlock Text="5. Limit switch pressed → Scan completes" FontSize="9" Foreground="Gray" />
+                                    <TextBlock Text="6. Motor reverses → Ribbon returns to home" FontSize="9" Foreground="Gray" />
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                    </Border>
+
                     <!-- Result & Recommendations Card -->
-                    <Border Grid.Row="1" Grid.ColumnSpan="2" Background="{ThemeResource SystemControlBackgroundAltHighBrush}" Padding="24" CornerRadius="12" BorderThickness="1" BorderBrush="{ThemeResource SystemControlForegroundBaseLowBrush}">
+                    <Border Grid.Row="3" Grid.ColumnSpan="2" Background="{ThemeResource SystemControlBackgroundAltHighBrush}" Padding="24" CornerRadius="12" BorderThickness="1" BorderBrush="{ThemeResource SystemControlForegroundBaseLowBrush}">
                         <Grid ColumnDefinitions="*, 1.2*">
                             <StackPanel Spacing="12">
                                 <TextBlock Text="Last Foot Metric" Style="{StaticResource SubtitleTextBlockStyle}" FontWeight="Normal" />
@@ -181,7 +303,7 @@
                     </Border>
 
                     <!-- Shop Recommendation Card (QR Code) -->
-                    <Border x:Name="ShopCard" Grid.Row="1" Grid.ColumnSpan="2" Visibility="Collapsed" Background="{ThemeResource SystemControlBackgroundAltHighBrush}" Padding="24" CornerRadius="12" BorderThickness="1" BorderBrush="{ThemeResource SystemControlForegroundBaseLowBrush}" Margin="0,180,0,0">
+                    <Border x:Name="ShopCard" Grid.Row="4" Grid.ColumnSpan="2" Visibility="Collapsed" Background="{ThemeResource SystemControlBackgroundAltHighBrush}" Padding="24" CornerRadius="12" BorderThickness="1" BorderBrush="{ThemeResource SystemControlForegroundBaseLowBrush}" Margin="0,0,0,0">
                         <Grid ColumnDefinitions="*, 200">
                             <StackPanel Spacing="15">
                                 <TextBlock Text="Available at Nearby Stores" Style="{StaticResource SubtitleTextBlockStyle}" />

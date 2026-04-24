@@ -328,6 +328,21 @@ namespace IOT_APP
                         UpdateUltrasonicMonitor(distance);
                     }
                 }
+                else if (rawData.StartsWith("SCAN_STATE="))
+                {
+                    string state = rawData.Replace("SCAN_STATE=", "");
+                    UpdateScanStatus(state);
+                }
+                else if (rawData.StartsWith("[SCAN]"))
+                {
+                    // Display scan status messages
+                    MeasurementLabel.Text = rawData.Replace("[SCAN] ", "");
+                }
+                else if (rawData.StartsWith("SCAN_"))
+                {
+                    // Display scan event messages
+                    MeasurementLabel.Text = rawData;
+                }
                 else if (rawData.StartsWith("PONG="))
                 {
                     MeasurementLabel.Text = "Device is online!";
@@ -385,6 +400,179 @@ namespace IOT_APP
         private void StopButton_Click(object sender, RoutedEventArgs e)
         {
             WriteToSerial("STOP");
+        }
+
+        private void MoveMotorDistance_Click(object sender, RoutedEventArgs e)
+        {
+            // Get distance from input box
+            double distance = MotorDistanceBox?.Value ?? 5.0;
+
+            if (distance <= 0)
+            {
+                MeasurementLabel.Text = "Error: Distance must be greater than 0";
+                return;
+            }
+
+            // Get direction
+            bool isReverse = MoveReverseRadio?.IsChecked ?? false;
+            string direction = isReverse ? "REV" : "FWD";
+
+            // Send command to Arduino
+            // Format: MOVE=5CM (Arduino will handle it)
+            string command = $"MOVE={distance}CM";
+            WriteToSerial(command);
+
+            // Calculate and display estimated time
+            // Formula: At default speed of 2500µs per step, and 250 steps = 1cm
+            // So 200 steps per second = 0.8 cm per second
+            double estimatedSeconds = distance / 0.8;
+
+            if (MovementTimeLabel != null)
+            {
+                MovementTimeLabel.Text = $"Est. {estimatedSeconds:F2} seconds";
+            }
+
+            MeasurementLabel.Text = $"Moving motor {distance}cm {direction}...";
+        }
+
+        // Update calculated steps display when distance changes
+        private void MotorDistanceBox_ValueChanged(Microsoft.UI.Xaml.Controls.NumberBox sender, Microsoft.UI.Xaml.Controls.NumberBoxValueChangedEventArgs args)
+        {
+            double distance = sender.Value;
+            if (CalculatedStepsLabel != null)
+            {
+                int steps = (int)(distance * 250);  // 250 steps per cm
+                CalculatedStepsLabel.Text = $"{steps} steps";
+            }
+
+            // Update movement time estimate
+            if (MovementTimeLabel != null)
+            {
+                double estimatedSeconds = distance / 0.8;  // 0.8 cm per second at default speed
+                MovementTimeLabel.Text = $"Est. {estimatedSeconds:F2} seconds";
+            }
+        }
+
+        // ========== AUTOMATIC FOOT SCANNING HANDLERS ==========
+
+        private bool _isScanning = false;
+        private DateTime _scanStartTime;
+        private DispatcherTimer _scanStatusTimer;
+
+        private void StartAutoScan_Click(object sender, RoutedEventArgs e)
+        {
+            if (_isScanning)
+            {
+                MeasurementLabel.Text = "Scan already in progress";
+                return;
+            }
+
+            _isScanning = true;
+            _scanStartTime = DateTime.Now;
+
+            // Send scan start command to Arduino
+            WriteToSerial("SCAN_START");
+
+            // Update UI
+            if (ScanStartButton != null) ScanStartButton.IsEnabled = false;
+            if (ScanStopButton != null) ScanStopButton.IsEnabled = true;
+
+            if (ScanStateLabel != null)
+                ScanStateLabel.Text = "SCANNING - Place foot on scanner";
+
+            MeasurementLabel.Text = "Scan started - Please place foot on scanner";
+
+            // Start timer to update scan time
+            _scanStatusTimer = new DispatcherTimer();
+            _scanStatusTimer.Interval = TimeSpan.FromMilliseconds(500);
+            _scanStatusTimer.Tick += (s, args) =>
+            {
+                double elapsed = (DateTime.Now - _scanStartTime).TotalSeconds;
+                if (ScanTimeLabel != null)
+                    ScanTimeLabel.Text = $"{elapsed:F1}s";
+            };
+            _scanStatusTimer.Start();
+        }
+
+        private void StopAutoScan_Click(object sender, RoutedEventArgs e)
+        {
+            if (!_isScanning)
+                return;
+
+            _isScanning = false;
+
+            // Stop the timer
+            if (_scanStatusTimer != null)
+            {
+                _scanStatusTimer.Stop();
+                _scanStatusTimer = null;
+            }
+
+            // Send scan stop command to Arduino
+            WriteToSerial("SCAN_STOP");
+
+            // Update UI
+            if (ScanStartButton != null) ScanStartButton.IsEnabled = true;
+            if (ScanStopButton != null) ScanStopButton.IsEnabled = false;
+
+            if (ScanStateLabel != null)
+                ScanStateLabel.Text = "IDLE - Stopped by user";
+
+            MeasurementLabel.Text = "Scan stopped";
+        }
+
+        private void GetScanStatus_Click(object sender, RoutedEventArgs e)
+        {
+            // Request scan status from Arduino
+            WriteToSerial("SCAN_STATUS");
+            MeasurementLabel.Text = "Requesting scan status...";
+        }
+
+        private void UpdateScanStatus(string state)
+        {
+            // Parse scan state from Arduino response
+            // States: IDLE, PRESSURE_DETECTED, MOVING_FORWARD, MEASURING, LIMIT_REACHED, MOVING_REVERSE, COMPLETE
+
+            DispatcherQueue.TryEnqueue(() =>
+            {
+                if (ScanStateLabel != null)
+                {
+                    switch (state)
+                    {
+                        case "0":
+                            ScanStateLabel.Text = "IDLE - Ready for scan";
+                            ScanStateLabel.Foreground = new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.LimeGreen);
+                            break;
+                        case "1":
+                            ScanStateLabel.Text = "PRESSURE DETECTED - Moving forward";
+                            ScanStateLabel.Foreground = new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.Yellow);
+                            break;
+                        case "2":
+                            ScanStateLabel.Text = "MOVING FORWARD - Ribbon extending";
+                            ScanStateLabel.Foreground = new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.Orange);
+                            break;
+                        case "3":
+                            ScanStateLabel.Text = "MEASURING - Foot detected";
+                            ScanStateLabel.Foreground = new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.Cyan);
+                            break;
+                        case "4":
+                            ScanStateLabel.Text = "LIMIT REACHED - Scan complete";
+                            ScanStateLabel.Foreground = new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.Orange);
+                            break;
+                        case "5":
+                            ScanStateLabel.Text = "MOVING REVERSE - Returning home";
+                            ScanStateLabel.Foreground = new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.Orange);
+                            break;
+                        case "6":
+                            ScanStateLabel.Text = "COMPLETE - Scan finished";
+                            ScanStateLabel.Foreground = new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.LimeGreen);
+                            _isScanning = false;
+                            if (ScanStartButton != null) ScanStartButton.IsEnabled = true;
+                            if (ScanStopButton != null) ScanStopButton.IsEnabled = false;
+                            break;
+                    }
+                }
+            });
         }
 
         // ========== DRIVER TESTING SECTION ==========

@@ -48,6 +48,23 @@ int stepDelayMicroseconds = 1000; // Default speed
 bool motorEnabled = false;
 bool motorDirection = LOW;        // LOW = forward, HIGH = reverse
 
+// ========== AUTOMATIC FOOT SCANNING STATE MACHINE ==========
+enum ScanState {
+  SCAN_IDLE = 0,           // Waiting for foot
+  SCAN_PRESSURE_DETECTED = 1,  // Foot placed on scanner
+  SCAN_MOVING_FORWARD = 2,     // Motor moving forward
+  SCAN_MEASURING = 3,          // Ultrasonic detecting foot
+  SCAN_LIMIT_REACHED = 4,      // End position reached
+  SCAN_MOVING_REVERSE = 5,     // Motor returning to home
+  SCAN_COMPLETE = 6            // Scan finished
+};
+
+ScanState currentScanState = SCAN_IDLE;
+unsigned long scanStartTime = 0;
+int pressureThreshold = 500;     // Threshold for detecting foot pressure
+int ultrasonicThreshold = 15;    // Detection threshold in cm (15cm = foot present)
+int scanProgress = 0;            // Progress 0-100%
+
 // ========== SETUP ==========
 void setup() {
   Serial.begin(9600);
@@ -86,8 +103,11 @@ void loop() {
 	}
   }
 
-  // Run stepper motor if enabled
-  if (motorEnabled) {
+  // ========== AUTOMATIC FOOT SCANNING STATE MACHINE ==========
+  updateAutoScan();
+
+  // Run stepper motor if enabled (manual control)
+  if (motorEnabled && currentScanState == SCAN_IDLE) {
 	digitalWrite(DIR_PIN, motorDirection);
 	digitalWrite(STEP_PIN, HIGH);
 	delayMicroseconds(stepDelayMicroseconds);
@@ -128,7 +148,205 @@ void initializePins() {
   digitalWrite(ULTRASONIC_TRIG_PIN, LOW);   // Trigger off
 }
 
-// ========== MOTOR CONTROL FUNCTIONS ==========
+// ========== AUTOMATIC FOOT SCANNING STATE MACHINE ==========
+void updateAutoScan() {
+  // Read current sensor values
+  int currentPressure = analogRead(PRESSURE_SENSOR_PIN);
+  int limitSwitchState = digitalRead(LIMIT_SWITCH_PIN);
+  int ultrasonicDist = getUltrasonicDistance();
+
+  switch (currentScanState) {
+
+    case SCAN_IDLE:
+      // Waiting for foot to be placed (pressure sensor detects force)
+      if (currentPressure > pressureThreshold) {
+        Serial.println("[SCAN] 🔴 PRESSURE DETECTED - Starting foot scan...");
+        currentScanState = SCAN_PRESSURE_DETECTED;
+        scanStartTime = millis();
+      }
+      break;
+
+    case SCAN_PRESSURE_DETECTED:
+      // Foot detected, start moving motor forward
+      Serial.println("[SCAN] Moving motor forward...");
+      startMotorForScan();
+      currentScanState = SCAN_MOVING_FORWARD;
+      break;
+
+    case SCAN_MOVING_FORWARD:
+      // Motor moving forward, check if ultrasonic detects foot
+      if (ultrasonicDist > 0 && ultrasonicDist <= ultrasonicThreshold) {
+        Serial.print("[SCAN] 📏 Foot detected at ");
+        Serial.print(ultrasonicDist);
+        Serial.println(" cm - Starting measurement...");
+        currentScanState = SCAN_MEASURING;
+        sendResponse("SCAN_MEASURING_START");
+      }
+
+      // Continue moving forward until limit switch is released
+      moveMotorForScan();
+
+      if (limitSwitchState == HIGH) {  // Limit switch released = end of travel
+        Serial.println("[SCAN] Limit switch released - End of scan position");
+        currentScanState = SCAN_LIMIT_REACHED;
+        stopMotorForScan();
+      }
+      break;
+
+    case SCAN_MEASURING:
+      // Actively measuring foot position
+      if (ultrasonicDist > ultrasonicThreshold || ultrasonicDist <= 0) {
+        // Foot no longer detected
+        Serial.println("[SCAN] Foot measurement complete!");
+        sendResponse("SCAN_MEASURING_COMPLETE");
+      }
+
+      // Continue moving forward
+      moveMotorForScan();
+
+      if (limitSwitchState == HIGH) {  // Limit switch released = end of travel
+        Serial.println("[SCAN] Limit switch released - Starting return...");
+        currentScanState = SCAN_LIMIT_REACHED;
+        stopMotorForScan();
+      }
+      break;
+
+    case SCAN_LIMIT_REACHED:
+      // Reached end position, now reverse to home
+      Serial.println("[SCAN] ↩️ Returning to home position...");
+      reverseMotorForScan();
+      currentScanState = SCAN_MOVING_REVERSE;
+      break;
+
+    case SCAN_MOVING_REVERSE:
+      // Moving backward to home position
+      moveMotorReverse();
+
+      if (limitSwitchState == LOW) {  // Limit switch triggered = at home
+        Serial.println("[SCAN] ✅ Reached home position - Scan complete!");
+        stopMotorForScan();
+        currentScanState = SCAN_COMPLETE;
+        sendResponse("SCAN_COMPLETE");
+
+        // Log scan statistics
+        unsigned long scanDuration = millis() - scanStartTime;
+        Serial.print("[SCAN] Duration: ");
+        Serial.print(scanDuration / 1000);
+        Serial.println(" seconds");
+
+        // Auto-reset after 2 seconds
+        delay(2000);
+        currentScanState = SCAN_IDLE;
+        Serial.println("[SCAN] Ready for next scan");
+      }
+      break;
+
+    case SCAN_COMPLETE:
+      // Scan finished, wait for next foot
+      if (currentPressure < 300) {  // Pressure released
+        currentScanState = SCAN_IDLE;
+      }
+      break;
+  }
+}
+
+// Helper functions for automatic scanning
+void startMotorForScan() {
+  motorEnabled = true;
+  motorDirection = LOW;  // Forward
+  digitalWrite(EN_PIN, LOW);
+  digitalWrite(DIR_PIN, LOW);
+}
+
+void moveMotorForScan() {
+  // Execute one step forward
+  digitalWrite(STEP_PIN, HIGH);
+  delayMicroseconds(stepDelayMicroseconds);
+  digitalWrite(STEP_PIN, LOW);
+  delayMicroseconds(stepDelayMicroseconds);
+}
+
+void moveMotorReverse() {
+  // Execute one step backward
+  digitalWrite(DIR_PIN, HIGH);  // Reverse direction
+  digitalWrite(STEP_PIN, HIGH);
+  delayMicroseconds(stepDelayMicroseconds);
+  digitalWrite(STEP_PIN, LOW);
+  delayMicroseconds(stepDelayMicroseconds);
+}
+
+void stopMotorForScan() {
+  motorEnabled = false;
+  digitalWrite(EN_PIN, HIGH);  // Disable driver
+}
+
+int getUltrasonicDistance() {
+  // Get current ultrasonic distance reading
+  digitalWrite(ULTRASONIC_TRIG_PIN, LOW);
+  delayMicroseconds(2);
+  digitalWrite(ULTRASONIC_TRIG_PIN, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(ULTRASONIC_TRIG_PIN, LOW);
+
+  long duration = pulseIn(ULTRASONIC_ECHO_PIN, HIGH, 30000);  // 30ms timeout
+  int distance = duration * 0.034 / 2;
+
+  if (distance < 0 || distance > 400) {
+    return -1;
+  }
+  return distance;
+}
+
+void scanFootStart() {
+  // Command to start automatic foot scanning
+  if (currentScanState != SCAN_IDLE) {
+    Serial.println("[SCAN] Error: Scan already in progress");
+    return;
+  }
+
+  Serial.println("[SCAN] Automatic foot scanning enabled");
+  Serial.println("[SCAN] Please place foot on scanner...");
+  currentScanState = SCAN_IDLE;  // Ready to detect pressure
+}
+
+void scanFootStop() {
+  // Command to stop automatic foot scanning
+  stopMotorForScan();
+  currentScanState = SCAN_IDLE;
+  Serial.println("[SCAN] Foot scanning stopped");
+}
+
+void reportScanStatus() {
+  // Report current scanning state
+  Serial.print("[SCAN] Current state: ");
+
+  switch (currentScanState) {
+    case SCAN_IDLE:
+      Serial.println("IDLE - Waiting for foot");
+      break;
+    case SCAN_PRESSURE_DETECTED:
+      Serial.println("PRESSURE_DETECTED");
+      break;
+    case SCAN_MOVING_FORWARD:
+      Serial.println("MOVING_FORWARD");
+      break;
+    case SCAN_MEASURING:
+      Serial.println("MEASURING");
+      break;
+    case SCAN_LIMIT_REACHED:
+      Serial.println("LIMIT_REACHED");
+      break;
+    case SCAN_MOVING_REVERSE:
+      Serial.println("MOVING_REVERSE");
+      break;
+    case SCAN_COMPLETE:
+      Serial.println("COMPLETE");
+      break;
+  }
+
+  Serial.print("SCAN_STATE=");
+  Serial.println(currentScanState);
+}
 void startMotor() {
   motorEnabled = true;
   systemState.stepperEnabled = true;
@@ -174,6 +392,94 @@ void setMotorSpeed(int speed) {
     Serial.println(speed);
   } else {
     Serial.println("[ERROR] Speed must be > 100 microseconds");
+  }
+}
+
+// ========== DISTANCE-BASED MOTOR CONTROL ==========
+// Lead screw: T8 (8mm pitch), Motor: NEMA 17 (200 steps/rev)
+// Calculation: 8mm per rev / 200 steps = 0.04mm per step
+// Therefore: 250 steps = 1cm
+
+int cmToSteps(float cm) {
+  // Convert centimeters to motor steps
+  // 250 steps = 1 cm
+  return (int)(cm * 250.0);
+}
+
+void moveMotorCM(float cm, bool direction) {
+  // Move motor a specific distance in centimeters
+  int steps = cmToSteps(cm);
+  moveMotorSteps(steps, direction, cm);
+}
+
+void moveMotorSteps(int steps, bool direction, float cm = 0.0) {
+  // Move motor a specific number of steps
+  if (steps <= 0) {
+    Serial.println("[ERROR] Steps must be > 0");
+    return;
+  }
+
+  // Set direction
+  digitalWrite(DIR_PIN, direction ? HIGH : LOW);
+  systemState.stepperDirection = direction ? HIGH : LOW;
+
+  // Enable motor
+  digitalWrite(EN_PIN, LOW);
+  motorEnabled = true;
+  systemState.stepperEnabled = true;
+
+  // Execute step pulses
+  for (int i = 0; i < steps; i++) {
+    digitalWrite(STEP_PIN, HIGH);
+    delayMicroseconds(stepDelayMicroseconds);
+    digitalWrite(STEP_PIN, LOW);
+    delayMicroseconds(stepDelayMicroseconds);
+  }
+
+  // Motor complete
+  Serial.print("[MOTOR] Completed ");
+  Serial.print(steps);
+  Serial.print(" steps");
+  if (cm > 0.0) {
+    Serial.print(" (");
+    Serial.print(cm);
+    Serial.print(" cm)");
+  }
+  Serial.println();
+  Serial.print("MOTOR_MOVE_COMPLETE=");
+  Serial.println(steps);
+}
+
+void parseMoveCommand(String command) {
+  // Parse commands like "5CM" or "1250" (steps)
+  command.toUpperCase();
+
+  // Check if it ends with "CM"
+  if (command.endsWith("CM")) {
+    // Extract numeric part
+    String numStr = command.substring(0, command.length() - 2);
+    float cm = numStr.toFloat();
+
+    if (cm > 0) {
+      Serial.print("[MOVE] Moving ");
+      Serial.print(cm);
+      Serial.println(" cm (Forward)");
+      moveMotorCM(cm, false);  // false = forward
+    } else {
+      Serial.println("[ERROR] Distance must be > 0");
+    }
+  }
+  else {
+    // Assume it's a step count
+    int steps = command.toInt();
+    if (steps > 0) {
+      Serial.print("[MOVE] Moving ");
+      Serial.print(steps);
+      Serial.println(" steps (Forward)");
+      moveMotorSteps(steps, false);  // false = forward
+    } else {
+      Serial.println("[ERROR] Steps must be > 0");
+    }
   }
 }
 
@@ -272,6 +578,24 @@ void processCommand(char* command) {
   else if (strcmp(token, "PWM_WRITE") == 0) {
 	// Format: PWM_WRITE=pin,value
 	writePWM(value);
+  }
+  else if (strcmp(token, "MOVE") == 0) {
+	// Format: MOVE=5CM (or MOVE=1250 for steps)
+	if (valueStr != NULL) {
+	  parseMoveCommand(String(valueStr));
+	}
+  }
+  else if (strcmp(token, "SCAN_START") == 0) {
+	// Start automatic foot scanning
+	scanFootStart();
+  }
+  else if (strcmp(token, "SCAN_STOP") == 0) {
+	// Stop automatic foot scanning
+	scanFootStop();
+  }
+  else if (strcmp(token, "SCAN_STATUS") == 0) {
+	// Report current scan state
+	reportScanStatus();
   }
   else if (strcmp(token, "STATUS") == 0) {
 	printStatus();
@@ -610,6 +934,13 @@ void printHelp() {
   Serial.println("║  MOTOR_DIR=LEFT|RIGHT   (Set direction)    ║");
   Serial.println("║  MOTOR_SPEED=xxx        (Set speed µs)     ║");
   Serial.println("║  MOTOR_STATUS           (Get status)       ║");
+  Serial.println("║  MOVE=5CM               (Move 5cm)         ║");
+  Serial.println("║  MOVE=1250              (Move 1250 steps)   ║");
+  Serial.println("║                                             ║");
+  Serial.println("║ AUTOMATIC FOOT SCANNING:                   ║");
+  Serial.println("║  SCAN_START             (Start scanning)   ║");
+  Serial.println("║  SCAN_STOP              (Stop scanning)    ║");
+  Serial.println("║  SCAN_STATUS            (Get scan state)   ║");
   Serial.println("║                                             ║");
   Serial.println("║ SENSOR READING:                            ║");
   Serial.println("║  LIMIT_CHECK            (Read limit)       ║");
