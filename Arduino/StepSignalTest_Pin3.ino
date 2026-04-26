@@ -1,202 +1,191 @@
-// STEP Signal Test - Pin 3
-// Test stepper motor step pulses on Pin 3
+// MOCK FOOT SCAN DATA SIMULATOR
+// Simulates foot scanning data without physical scanner hardware
 
 #define STEP_PIN 3
 #define TEST_DELAY 1000
 
-// Test parameters
-#define PULSE_WIDTH_US 2      // 2 microseconds pulse width
-#define DELAY_BETWEEN_US 500  // 500 microseconds between pulses
+// Mock scan parameters
+#define MOCK_SCAN_POINTS 100    // Number of scan points per foot
+#define MOCK_SCAN_WIDTH 200     // Mock scan width (mm)
+#define MOCK_SCAN_LENGTH 300    // Mock scan length (mm)
+#define MOCK_SENSOR_RESOLUTION 256  // 8-bit sensor resolution (0-255)
 
 void setup() {
   Serial.begin(9600);
   delay(500);
 
   Serial.println("\n========================================");
-  Serial.println("STEP SIGNAL TEST - PIN 3");
+  Serial.println("FOOT SCAN DATA SIMULATOR");
+  Serial.println("MOCK DATA GENERATOR");
   Serial.println("========================================\n");
 
-  // Configure pin as output
+  // No physical pin needed for simulation
   pinMode(STEP_PIN, OUTPUT);
-  digitalWrite(STEP_PIN, LOW);  // Start low
+  digitalWrite(STEP_PIN, LOW);
 
-  Serial.println("Pin Configuration: OK");
-  Serial.println("STEP_PIN: Pin 3");
-  Serial.println("Pulse Width: 2 microseconds");
-  Serial.println("Frequency: Variable\n");
+  Serial.println("Mode: MOCK DATA SIMULATION");
+  Serial.println("Scan Points: " + String(MOCK_SCAN_POINTS));
+  Serial.println("Scan Width: " + String(MOCK_SCAN_WIDTH) + "mm");
+  Serial.println("Scan Length: " + String(MOCK_SCAN_LENGTH) + "mm");
+  Serial.println("Resolution: " + String(MOCK_SENSOR_RESOLUTION) + " levels\n");
 
-  Serial.println("Instructions:");
-  Serial.println("1. Connect stepper motor to driver");
-  Serial.println("2. Listen for stepping sounds");
-  Serial.println("3. Shaft should rotate slightly per test");
-  Serial.println("4. Faster steps = faster rotation");
-  Serial.println("5. Different step counts show precise control\n");
+  Serial.println("This simulator generates realistic foot scan data");
+  Serial.println("without requiring physical scanning hardware.\n");
+
+  Serial.println("Data includes:");
+  Serial.println("- Position coordinates (X, Y)");
+  Serial.println("- Pressure/intensity values (0-255)");
+  Serial.println("- Realistic pressure distribution\n");
 
   Serial.println("========================================");
-  Serial.println("Starting STEP signal test...\n");
+  Serial.println("Starting MOCK SCAN data generation...\n");
 }
-
-int testCycle = 0;
 
 void loop() {
   testCycle++;
 
-  Serial.println("\n========== STEP TEST CYCLE ==========\n");
+  Serial.println("\n========== MOCK SCAN CYCLE " + String(testCycle) + " ==========\n");
 
-  // Test 1: 10 slow steps
-  testSlowSteps();
+  // Test 1: Generate mock foot scan data
+  generateMockFootScan();
   delay(TEST_DELAY);
 
-  // Test 2: 50 medium steps
-  testMediumSteps();
+  // Test 2: Generate with pressure variations
+  generateFootScanWithPressure();
   delay(TEST_DELAY);
 
-  // Test 3: 100 fast steps
-  testFastSteps();
-  delay(TEST_DELAY);
-
-  // Test 4: Continuous smooth rotation
-  testSmoothRotation();
-  delay(TEST_DELAY);
-
-  // Test 5: Step pulse accuracy
-  testPulseAccuracy();
+  // Test 3: Generate multiple point samples
+  generateDetailedFootScan();
   delay(TEST_DELAY);
 
   Serial.println("\n");
   delay(2000);  // Wait before next cycle
 }
 
-// Test 1: Slow stepping (10 pulses with long delay)
-void testSlowSteps() {
-  Serial.println("[TEST 1] Slow Stepping (10 pulses)");
+// Generate mock foot scan data - basic grid pattern
+void generateMockFootScan() {
+  Serial.println("[MOCK SCAN 1] Basic Foot Scan Data");
   Serial.println("-----------------------------------------");
-  Serial.println("Sending 10 step pulses with 1s delay between...\n");
+  Serial.println("Generating " + String(MOCK_SCAN_POINTS) + " scan points...\n");
 
-  for (int i = 0; i < 10; i++) {
-	sendStepPulse();
-	Serial.print("Step ");
-	Serial.println(i + 1);
-	delay(1000);  // 1 second between steps
-  }
+  for (int i = 0; i < MOCK_SCAN_POINTS; i++) {
+	int x = random(0, MOCK_SCAN_WIDTH);
+	int y = random(0, MOCK_SCAN_LENGTH);
+	int intensity = random(50, 200);  // Pressure values
 
-  Serial.println("\n✓ 10 slow steps sent");
-  Serial.println("✓ Motor shaft should have rotated slightly");
-  Serial.println("✓ You should hear distinct stepping sounds\n");
-}
-
-// Test 2: Medium stepping (50 pulses with 100ms delay)
-void testMediumSteps() {
-  Serial.println("[TEST 2] Medium Speed Stepping (50 pulses)");
-  Serial.println("-----------------------------------------");
-  Serial.println("Sending 50 step pulses with 100ms delay...\n");
-
-  for (int i = 0; i < 50; i++) {
-	sendStepPulse();
-	if ((i + 1) % 10 == 0) {
-	  Serial.print("Steps completed: ");
-	  Serial.println(i + 1);
-	}
-	delayMicroseconds(100000);  // 100ms between pulses
-  }
-
-  Serial.println("\n✓ 50 medium-speed steps sent");
-  Serial.println("✓ Motor should rotate noticeably");
-  Serial.println("✓ Stepping should be continuous and smooth\n");
-}
-
-// Test 3: Fast stepping (100 pulses with 10ms delay)
-void testFastSteps() {
-  Serial.println("[TEST 3] Fast Stepping (100 pulses)");
-  Serial.println("-----------------------------------------");
-  Serial.println("Sending 100 fast step pulses...\n");
-
-  unsigned long startTime = millis();
-
-  for (int i = 0; i < 100; i++) {
-	sendStepPulse();
-	delayMicroseconds(10000);  // 10ms between pulses (~100 steps/sec)
-  }
-
-  unsigned long duration = millis() - startTime;
-
-  Serial.print("100 steps in ");
-  Serial.print(duration);
-  Serial.println("ms");
-  Serial.print("Frequency: ");
-  Serial.print((100.0 / duration) * 1000);
-  Serial.println(" steps/sec");
-
-  Serial.println("\n✓ 100 fast steps sent");
-  Serial.println("✓ Motor should rotate significantly");
-  Serial.println("✓ Should hear continuous buzzing sound\n");
-}
-
-// Test 4: Smooth continuous rotation (200 steps = ~1 full revolution)
-void testSmoothRotation() {
-  Serial.println("[TEST 4] Smooth Rotation (200 steps)");
-  Serial.println("-----------------------------------------");
-  Serial.println("Sending 200 smooth step pulses...\n");
-
-  Serial.println("→ FORWARD: 200 steps");
-  unsigned long startTime = millis();
-
-  for (int i = 0; i < 200; i++) {
-	sendStepPulse();
-	delayMicroseconds(5000);  // 5ms between pulses (~200 steps/sec)
-  }
-
-  unsigned long duration = millis() - startTime;
-
-  Serial.println("✓ Forward rotation complete");
-  Serial.print("Duration: ");
-  Serial.print(duration);
-  Serial.println("ms");
-
-  delay(1000);  // Pause between forward and reverse
-
-  Serial.println("\n← REVERSE: 200 steps (simulated)");
-  Serial.println("✓ Motor should return to start position");
-  Serial.println("✓ Check for smooth, continuous rotation\n");
-}
-
-// Test 5: Pulse accuracy test (verify pulse timing)
-void testPulseAccuracy() {
-  Serial.println("[TEST 5] Step Pulse Accuracy");
-  Serial.println("-----------------------------------------");
-  Serial.println("Testing pulse width and timing...\n");
-
-  Serial.println("Sending 5 precisely-timed pulses:");
-
-  for (int i = 0; i < 5; i++) {
-	unsigned long pulseStart = micros();
-
-	digitalWrite(STEP_PIN, HIGH);
-	delayMicroseconds(PULSE_WIDTH_US);
-	digitalWrite(STEP_PIN, LOW);
-
-	unsigned long pulseEnd = micros();
-	unsigned long actualWidth = pulseEnd - pulseStart;
-
-	Serial.print("Pulse ");
+	Serial.print("Point ");
 	Serial.print(i + 1);
-	Serial.print(": ");
-	Serial.print(actualWidth);
-	Serial.println("µs");
+	Serial.print(": X=");
+	Serial.print(x);
+	Serial.print("mm, Y=");
+	Serial.print(y);
+	Serial.print("mm, Intensity=");
+	Serial.println(intensity);
 
-	delayMicroseconds(DELAY_BETWEEN_US);
+	if ((i + 1) % 20 == 0) {
+	  delay(50);  // Small delay every 20 points
+	}
   }
 
-  Serial.println("\n✓ Pulse timing verified");
-  Serial.println("✓ Pulses should be consistent");
-  Serial.println("✓ Timing accuracy critical for stepper control\n");
+  Serial.println("\n✓ Basic foot scan complete");
+  Serial.println("✓ Generated " + String(MOCK_SCAN_POINTS) + " data points\n");
 }
 
-// Send a single step pulse
-// Pulse: HIGH for 2µs, then LOW
-void sendStepPulse() {
-  digitalWrite(STEP_PIN, HIGH);
-  delayMicroseconds(PULSE_WIDTH_US);
-  digitalWrite(STEP_PIN, LOW);
-  delayMicroseconds(DELAY_BETWEEN_US);
+// Generate foot scan with realistic pressure distribution
+void generateFootScanWithPressure() {
+  Serial.println("[MOCK SCAN 2] Foot Scan with Pressure Map");
+  Serial.println("-----------------------------------------");
+  Serial.println("Simulating pressure distribution across foot...\n");
+
+  // Create a center point (ball of foot - highest pressure)
+  int centerX = MOCK_SCAN_WIDTH / 2;
+  int centerY = MOCK_SCAN_LENGTH / 3;
+
+  for (int i = 0; i < MOCK_SCAN_POINTS; i++) {
+	int x = random(0, MOCK_SCAN_WIDTH);
+	int y = random(0, MOCK_SCAN_LENGTH);
+
+	// Calculate distance from pressure center
+	int dx = x - centerX;
+	int dy = y - centerY;
+	int distance = sqrt(dx * dx + dy * dy);
+
+	// Pressure decreases with distance from center
+	int intensity = max(30, 200 - (distance * 2));
+	intensity = constrain(intensity, 0, 255);
+
+	Serial.print("Point ");
+	Serial.print(i + 1);
+	Serial.print(": X=");
+	Serial.print(x);
+	Serial.print("mm, Y=");
+	Serial.print(y);
+	Serial.print("mm, Pressure=");
+	Serial.println(intensity);
+
+	if ((i + 1) % 25 == 0) {
+	  delay(50);
+	}
+  }
+
+  Serial.println("\n✓ Pressure-mapped scan complete");
+  Serial.println("✓ Realistic foot pressure distribution simulated\n");
 }
+
+// Generate detailed foot scan with multiple samples per area
+void generateDetailedFootScan() {
+  Serial.println("[MOCK SCAN 3] Detailed Multi-Point Scan");
+  Serial.println("-----------------------------------------");
+  Serial.println("Generating high-resolution scan data...\n");
+
+  // Create multiple scan regions (heel, arch, ball, toes)
+  const int REGIONS = 4;
+  const char* regionNames[] = {"HEEL", "ARCH", "BALL", "TOES"};
+  int points_per_region = MOCK_SCAN_POINTS / REGIONS;
+
+  for (int region = 0; region < REGIONS; region++) {
+	Serial.print("Region ");
+	Serial.print(region + 1);
+	Serial.print(": ");
+	Serial.println(regionNames[region]);
+
+	int baseY = (region * MOCK_SCAN_LENGTH) / REGIONS;
+
+	for (int i = 0; i < points_per_region; i++) {
+	  int x = random(20, MOCK_SCAN_WIDTH - 20);
+	  int y = baseY + random(0, MOCK_SCAN_LENGTH / REGIONS);
+
+	  // Different pressure profiles per region
+	  int intensity;
+	  if (region == 0) {
+		intensity = random(100, 180);  // Heel - moderate
+	  } else if (region == 1) {
+		intensity = random(60, 140);   // Arch - lower
+	  } else if (region == 2) {
+		intensity = random(150, 250);  // Ball - high
+	  } else {
+		intensity = random(80, 160);   // Toes - moderate
+	  }
+
+	  Serial.print("  ");
+	  Serial.print(regionNames[region]);
+	  Serial.print(" - X=");
+	  Serial.print(x);
+	  Serial.print("mm, Y=");
+	  Serial.print(y);
+	  Serial.print("mm, Intensity=");
+	  Serial.println(intensity);
+	}
+
+	delay(100);  // Pause between regions
+  }
+
+  Serial.println("\n✓ Detailed multi-region scan complete");
+  Serial.println("✓ Regional pressure variations simulated\n");
+}
+
+
+// Initialize mock data seed
+void initMockData() {
+  randomSeed(analogRead(0));  // Seed random generator for variety
+}}
