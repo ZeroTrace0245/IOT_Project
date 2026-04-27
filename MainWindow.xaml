@@ -1052,7 +1052,7 @@
             </ScrollViewer>
 
             <!-- Sensor Detection Panel -->
-            <ScrollViewer Visibility="Collapsed">
+            <ScrollViewer x:Name="SensorDetectionPanel" Visibility="Collapsed">
                 <StackPanel Padding="40" Spacing="30">
                     <StackPanel Spacing="8">
                         <TextBlock Text="Sensor Detection &amp; Validation System" Style="{StaticResource TitleTextBlockStyle}" FontWeight="SemiLight" />
@@ -1064,10 +1064,10 @@
                         <StackPanel Spacing="15">
                             <TextBlock Text="Detection Controls" Style="{StaticResource SubtitleTextBlockStyle}" FontWeight="SemiBold" />
                             <StackPanel Orientation="Horizontal" Spacing="10">
-                                <Button x:Name="StartDetectionButton" Content="🔎 Start Handshake" Click="StartSensorDetection_Click" Style="{StaticResource AccentButtonStyle}" Padding="12,8" />
-                                <Button x:Name="ValidateButton" Content="✓ Validate Sensors" Click="ValidateSensors_Click" Padding="12,8" />
-                                <Button x:Name="ResetDetectionButton" Content="↻ Reset Detection" Click="ResetDetection_Click" Padding="12,8" />
-                                <Button Content="? Help" Click="SensorHelp_Click" Padding="12,8" />
+                                <Button x:Name="StartDetectionButton" Content="Start Handshake" Click="StartSensorDetection_Click" Style="{StaticResource AccentButtonStyle}" Padding="12,8" />
+                                <Button x:Name="ValidateButton" Content="Validate Sensors" Click="ValidateSensors_Click" Padding="12,8" />
+                                <Button x:Name="ResetDetectionButton" Content="Reset Detection" Click="ResetDetection_Click" Padding="12,8" />
+                                <Button Content="Help" Click="SensorHelp_Click" Padding="12,8" />
                             </StackPanel>
                         </StackPanel>
                     </Border>
@@ -1087,7 +1087,7 @@
                         <Border Background="{ThemeResource SystemControlForegroundBaseLowBrush}" Padding="20" CornerRadius="12" Opacity="0.2">
                             <StackPanel Spacing="12" HorizontalAlignment="Center">
                                 <TextBlock Text="System Status" Style="{StaticResource BodyStrongTextBlockStyle}" TextAlignment="Center" />
-                                <TextBlock x:Name="SystemStatusText" Text="⏸️ Idle" Style="{StaticResource HeaderTextBlockStyle}" Foreground="Gray" TextAlignment="Center" />
+                                <TextBlock x:Name="SystemStatusText" Text="Idle" Style="{StaticResource HeaderTextBlockStyle}" Foreground="Gray" TextAlignment="Center" />
                                 <TextBlock x:Name="LastCheckText" Text="Never" FontSize="11" Foreground="Gray" TextAlignment="Center" />
                             </StackPanel>
                         </Border>
@@ -1121,53 +1121,149 @@
                     <!-- Sensor Details -->
                     <Border Background="{ThemeResource SystemControlBackgroundAltHighBrush}" Padding="24" CornerRadius="12" BorderThickness="1" BorderBrush="{ThemeResource SystemControlForegroundBaseLowBrush}">
                         <StackPanel Spacing="15">
-                            <TextBlock Text="Sensor Information" Style="{StaticResource SubtitleTextBlockStyle}" FontWeight="SemiBold" />
-                            <Grid ColumnDefinitions="1*, 1*, 1*, 1*" ColumnSpacing="15" RowSpacing="15">
-                                <!-- Limit Switch Card -->
-                                <Border Background="{ThemeResource SystemControlForegroundBaseLowBrush}" Padding="16" CornerRadius="8" Opacity="0.1">
-                                    <StackPanel Spacing="8">
-                                        <TextBlock Text="🔴 Limit Switch" FontWeight="Bold" FontSize="12" />
-                                        <TextBlock Text="Pin 4" FontSize="10" Foreground="Gray" />
-                                        <Border Padding="8" CornerRadius="4" Background="{ThemeResource SystemControlBackgroundAccentBrush}" Opacity="0.3">
-                                            <TextBlock x:Name="DetectionLimitSwitchStatus" Text="❌ Not Detected" FontSize="11" Foreground="Gray" />
+                            <TextBlock Text="Sensor Information &amp; Status" Style="{StaticResource SubtitleTextBlockStyle}" FontWeight="SemiBold" />
+                            <Grid ColumnDefinitions="1*, 1*, 1*" ColumnSpacing="15" RowSpacing="15">
+                                <!-- Pressure Sensor (A0) Card -->
+                                <Border Background="{ThemeResource SystemControlForegroundBaseLowBrush}" Padding="16" CornerRadius="8" Opacity="0.1" BorderThickness="2" BorderBrush="Orange">
+                                    <StackPanel Spacing="10">
+                                        <StackPanel Orientation="Horizontal" Spacing="8">
+                                            <TextBlock Text="Pressure Sensor" FontWeight="Bold" FontSize="13" />
+                                            <TextBlock Text="Analog Pin A0" FontSize="10" Foreground="Gray" />
+                                        </StackPanel>
+                                        <Border Padding="10" CornerRadius="6" Background="{ThemeResource SystemControlBackgroundAccentBrush}" Opacity="0.3">
+                                            <TextBlock x:Name="PressureSensorStatus" Text="Detecting..." FontSize="12" Foreground="Orange" FontWeight="Bold" />
                                         </Border>
-                                        <TextBlock Text="ID: 0x01" FontSize="9" Foreground="LightGray" />
+                                        <StackPanel Spacing="4">
+                                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                                <TextBlock Text="Raw Value:" FontSize="10" Foreground="Gray" Width="90" />
+                                                <TextBlock x:Name="PressureRawValue" Text="---" FontSize="10" Foreground="LimeGreen" FontWeight="Bold" />
+                                            </StackPanel>
+                                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                                <TextBlock Text="Voltage:" FontSize="10" Foreground="Gray" Width="90" />
+                                                <TextBlock x:Name="PressureVoltageValue" Text="---" FontSize="10" Foreground="LimeGreen" FontWeight="Bold" />
+                                            </StackPanel>
+                                        </StackPanel>
+                                        <TextBlock Text="Range: 0-1023 (0-5V)" FontSize="9" Foreground="LightGray" />
                                     </StackPanel>
                                 </Border>
 
-                                <!-- Motor PWM Card -->
-                                <Border Background="{ThemeResource SystemControlForegroundBaseLowBrush}" Padding="16" CornerRadius="8" Opacity="0.1">
-                                    <StackPanel Spacing="8">
-                                        <TextBlock Text="⚡ Motor PWM" FontWeight="Bold" FontSize="12" />
-                                        <TextBlock Text="Pin 8" FontSize="10" Foreground="Gray" />
-                                        <Border Padding="8" CornerRadius="4" Background="{ThemeResource SystemControlBackgroundAccentBrush}" Opacity="0.3">
-                                            <TextBlock x:Name="MotorPWMStatus" Text="❌ Not Detected" FontSize="11" Foreground="Gray" />
+                                <!-- Limit Switch (Pin 4) Card -->
+                                <Border Background="{ThemeResource SystemControlForegroundBaseLowBrush}" Padding="16" CornerRadius="8" Opacity="0.1" BorderThickness="2" BorderBrush="SkyBlue">
+                                    <StackPanel Spacing="10">
+                                        <StackPanel Orientation="Horizontal" Spacing="8">
+                                            <TextBlock Text="Limit Switch" FontWeight="Bold" FontSize="13" />
+                                            <TextBlock Text="Digital Pin 4" FontSize="10" Foreground="Gray" />
+                                        </StackPanel>
+                                        <Border Padding="10" CornerRadius="6" Background="{ThemeResource SystemControlBackgroundAccentBrush}" Opacity="0.3">
+                                            <TextBlock x:Name="LimitSwitchSensorStatus" Text="Detecting..." FontSize="12" Foreground="SkyBlue" FontWeight="Bold" />
                                         </Border>
-                                        <TextBlock Text="ID: 0x02" FontSize="9" Foreground="LightGray" />
+                                        <StackPanel Spacing="4">
+                                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                                <TextBlock Text="State:" FontSize="10" Foreground="Gray" Width="90" />
+                                                <TextBlock x:Name="LimitSwitchState" Text="---" FontSize="10" Foreground="LimeGreen" FontWeight="Bold" />
+                                            </StackPanel>
+                                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                                <TextBlock Text="Type:" FontSize="10" Foreground="Gray" Width="90" />
+                                                <TextBlock Text="Digital" FontSize="10" Foreground="LimeGreen" FontWeight="Bold" />
+                                            </StackPanel>
+                                        </StackPanel>
+                                        <TextBlock Text="Response: LOW=Pressed, HIGH=Released" FontSize="9" Foreground="LightGray" />
                                     </StackPanel>
                                 </Border>
 
-                                <!-- Stepper Motor Card -->
-                                <Border Background="{ThemeResource SystemControlForegroundBaseLowBrush}" Padding="16" CornerRadius="8" Opacity="0.1">
-                                    <StackPanel Spacing="8">
-                                        <TextBlock Text="⚙️ Stepper Motor" FontWeight="Bold" FontSize="12" />
-                                        <TextBlock Text="Pin 3" FontSize="10" Foreground="Gray" />
-                                        <Border Padding="8" CornerRadius="4" Background="{ThemeResource SystemControlBackgroundAccentBrush}" Opacity="0.3">
-                                            <TextBlock x:Name="StepperStatus" Text="❌ Not Detected" FontSize="11" Foreground="Gray" />
+                                <!-- Ultrasonic Sensor (Pins 1 & 2) Card -->
+                                <Border Background="{ThemeResource SystemControlForegroundBaseLowBrush}" Padding="16" CornerRadius="8" Opacity="0.1" BorderThickness="2" BorderBrush="LimeGreen">
+                                    <StackPanel Spacing="10">
+                                        <StackPanel Orientation="Horizontal" Spacing="8">
+                                            <TextBlock Text="Ultrasonic Sensor" FontWeight="Bold" FontSize="13" />
+                                            <TextBlock Text="Trigger: Pin 1 | Echo: Pin 2" FontSize="9" Foreground="Gray" />
+                                        </StackPanel>
+                                        <Border Padding="10" CornerRadius="6" Background="{ThemeResource SystemControlBackgroundAccentBrush}" Opacity="0.3">
+                                            <TextBlock x:Name="UltrasonicSensorStatus" Text="Detecting..." FontSize="12" Foreground="LimeGreen" FontWeight="Bold" />
                                         </Border>
-                                        <TextBlock Text="ID: 0x03" FontSize="9" Foreground="LightGray" />
+                                        <StackPanel Spacing="4">
+                                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                                <TextBlock Text="Distance:" FontSize="10" Foreground="Gray" Width="90" />
+                                                <TextBlock x:Name="UltrasonicDistanceSensorDetection" Text="--- cm" FontSize="10" Foreground="LimeGreen" FontWeight="Bold" />
+                                            </StackPanel>
+                                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                                <TextBlock Text="Max Range:" FontSize="10" Foreground="Gray" Width="90" />
+                                                <TextBlock Text="400 cm" FontSize="10" Foreground="LimeGreen" FontWeight="Bold" />
+                                            </StackPanel>
+                                        </StackPanel>
+                                        <TextBlock Text="Range: 2-400cm with ~0.34cm precision" FontSize="9" Foreground="LightGray" />
                                     </StackPanel>
                                 </Border>
 
-                                <!-- Pressure Sensor Card -->
-                                <Border Background="{ThemeResource SystemControlForegroundBaseLowBrush}" Padding="16" CornerRadius="8" Opacity="0.1">
-                                    <StackPanel Spacing="8">
-                                        <TextBlock Text="📊 Pressure Sensor" FontWeight="Bold" FontSize="12" />
-                                        <TextBlock Text="I2C 0x76" FontSize="10" Foreground="Gray" />
-                                        <Border Padding="8" CornerRadius="4" Background="{ThemeResource SystemControlBackgroundAccentBrush}" Opacity="0.3">
-                                            <TextBlock x:Name="PressureStatus" Text="❌ Not Detected" FontSize="11" Foreground="Gray" />
+                                <!-- HW201 Obstacle (Pin 3) Card -->
+                                <Border Background="{ThemeResource SystemControlForegroundBaseLowBrush}" Padding="16" CornerRadius="8" Opacity="0.1" BorderThickness="2" BorderBrush="Crimson">
+                                    <StackPanel Spacing="10">
+                                        <StackPanel Orientation="Horizontal" Spacing="8">
+                                            <TextBlock Text="HW201 Obstacle" FontWeight="Bold" FontSize="13" />
+                                            <TextBlock Text="Digital Pin 3" FontSize="10" Foreground="Gray" />
+                                        </StackPanel>
+                                        <Border Padding="10" CornerRadius="6" Background="{ThemeResource SystemControlBackgroundAccentBrush}" Opacity="0.3">
+                                            <TextBlock x:Name="HW201SensorStatus" Text="Detecting..." FontSize="12" Foreground="Crimson" FontWeight="Bold" />
                                         </Border>
-                                        <TextBlock Text="ID: 0x05" FontSize="9" Foreground="LightGray" />
+                                        <StackPanel Spacing="4">
+                                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                                <TextBlock Text="Detection:" FontSize="10" Foreground="Gray" Width="90" />
+                                                <TextBlock x:Name="HW201Detection" Text="---" FontSize="10" Foreground="LimeGreen" FontWeight="Bold" />
+                                            </StackPanel>
+                                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                                <TextBlock Text="Range:" FontSize="10" Foreground="Gray" Width="90" />
+                                                <TextBlock Text="2-40 cm" FontSize="10" Foreground="LimeGreen" FontWeight="Bold" />
+                                            </StackPanel>
+                                        </StackPanel>
+                                        <TextBlock Text="Response: LOW=Obstacle Detected, HIGH=Clear" FontSize="9" Foreground="LightGray" />
+                                    </StackPanel>
+                                </Border>
+
+                                <!-- Stepper Motor (Pin 5) Card -->
+                                <Border Background="{ThemeResource SystemControlForegroundBaseLowBrush}" Padding="16" CornerRadius="8" Opacity="0.1" BorderThickness="2" BorderBrush="Gold">
+                                    <StackPanel Spacing="10">
+                                        <StackPanel Orientation="Horizontal" Spacing="8">
+                                            <TextBlock Text="Stepper Motor" FontWeight="Bold" FontSize="13" />
+                                            <TextBlock Text="Step Pin 5 | STEP_PIN" FontSize="10" Foreground="Gray" />
+                                        </StackPanel>
+                                        <Border Padding="10" CornerRadius="6" Background="{ThemeResource SystemControlBackgroundAccentBrush}" Opacity="0.3">
+                                            <TextBlock x:Name="StepperSensorStatus" Text="Detecting..." FontSize="12" Foreground="Gold" FontWeight="Bold" />
+                                        </Border>
+                                        <StackPanel Spacing="4">
+                                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                                <TextBlock Text="Status:" FontSize="10" Foreground="Gray" Width="90" />
+                                                <TextBlock x:Name="StepperConfigStatus" Text="---" FontSize="10" Foreground="LimeGreen" FontWeight="Bold" />
+                                            </StackPanel>
+                                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                                <TextBlock Text="Type:" FontSize="10" Foreground="Gray" Width="90" />
+                                                <TextBlock Text="PWM Output" FontSize="10" Foreground="LimeGreen" FontWeight="Bold" />
+                                            </StackPanel>
+                                        </StackPanel>
+                                        <TextBlock Text="Pulse: 2µs | Control via step pulses" FontSize="9" Foreground="LightGray" />
+                                    </StackPanel>
+                                </Border>
+
+                                <!-- Mock Data Mode Card -->
+                                <Border Background="{ThemeResource SystemControlForegroundBaseLowBrush}" Padding="16" CornerRadius="8" Opacity="0.1" BorderThickness="2" BorderBrush="Purple">
+                                    <StackPanel Spacing="10">
+                                        <StackPanel Orientation="Horizontal" Spacing="8">
+                                            <TextBlock Text="Mock Data Mode" FontWeight="Bold" FontSize="13" />
+                                            <TextBlock Text="Simulation System" FontSize="10" Foreground="Gray" />
+                                        </StackPanel>
+                                        <Border Padding="10" CornerRadius="6" Background="{ThemeResource SystemControlBackgroundAccentBrush}" Opacity="0.3">
+                                            <TextBlock x:Name="MockDataStatus" Text="Available" FontSize="12" Foreground="Purple" FontWeight="Bold" />
+                                        </Border>
+                                        <StackPanel Spacing="4">
+                                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                                <TextBlock Text="Fallback:" FontSize="10" Foreground="Gray" Width="90" />
+                                                <TextBlock x:Name="MockDataMode" Text="Auto" FontSize="10" Foreground="LimeGreen" FontWeight="Bold" />
+                                            </StackPanel>
+                                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                                <TextBlock Text="Function:" FontSize="10" Foreground="Gray" Width="90" />
+                                                <TextBlock Text="Enabled" FontSize="10" Foreground="LimeGreen" FontWeight="Bold" />
+                                            </StackPanel>
+                                        </StackPanel>
+                                        <TextBlock Text="Generates realistic test data when sensors unavailable" FontSize="9" Foreground="LightGray" />
                                     </StackPanel>
                                 </Border>
                             </Grid>
@@ -1189,7 +1285,7 @@
             </ScrollViewer>
 
             <!-- Arduino Control Panel -->
-            <ScrollViewer Visibility="Collapsed">
+            <ScrollViewer x:Name="ArduinoControlPanel" Visibility="Collapsed">
                 <StackPanel Padding="40" Spacing="30">
                     <StackPanel Spacing="8">
                         <TextBlock Text="Arduino Uno - Comprehensive Control System" Style="{StaticResource TitleTextBlockStyle}" FontWeight="SemiLight" />

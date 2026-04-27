@@ -154,6 +154,8 @@ namespace IOT_APP
                 CustomPanel.Visibility = Visibility.Collapsed;
                 DriverTestPanel.Visibility = Visibility.Collapsed;
                 SerialConsolePanel.Visibility = Visibility.Collapsed;
+                SensorDetectionPanel.Visibility = Visibility.Collapsed;
+                ArduinoControlPanel.Visibility = Visibility.Collapsed;
 
                 string target = btn.Tag.ToString();
                 if (target == "Dashboard") DashboardPanel.Visibility = Visibility.Visible;
@@ -163,17 +165,33 @@ namespace IOT_APP
                 else if (target == "SerialConsole") SerialConsolePanel.Visibility = Visibility.Visible;
                 else if (target == "SensorDetection")
                 {
+                    SensorDetectionPanel.Visibility = Visibility.Visible;
                     InitializeSensorDetectionUI();
                 }
                 else if (target == "ArduinoControl")
                 {
-                    // Arduino Control panel uses existing methods
+                    ArduinoControlPanel.Visibility = Visibility.Visible;
                 }
             }
         }
 
         private void MeasureButton_Click(object sender, RoutedEventArgs e)
         {
+            // Check if serial port is connected
+            if (_serialPort == null || !_serialPort.IsOpen)
+            {
+                // Use mock data when Arduino is not connected
+                MeasurementLabel.Text = "Arduino not connected. Using MOCK DATA...";
+                System.Threading.Tasks.Task.Run(() =>
+                {
+                    GenerateMockFootData();
+                    System.Threading.Thread.Sleep(2000);
+                    GenerateAllMockSensorData();
+                });
+                return;
+            }
+
+            // Send actual command to Arduino
             WriteToSerial("MEASURE;SCAN=AUTO");
             FootResultLabel.Text = "Scanning foot...";
             Recommendations.Clear();
@@ -389,6 +407,17 @@ namespace IOT_APP
 
         private void StartButton_Click(object sender, RoutedEventArgs e)
         {
+            // Check if serial port is connected
+            if (_serialPort == null || !_serialPort.IsOpen)
+            {
+                MeasurementLabel.Text = "Arduino not connected. Using MOCK DATA...";
+                System.Threading.Tasks.Task.Run(() =>
+                {
+                    GenerateAllMockSensorData();
+                });
+                return;
+            }
+
             int radius = (int)RadiusBox.Value;
             int speed = (int)SpeedSlider.Value;
             string direction = CWButton.IsChecked == true ? "CW" : "CCW";
@@ -1364,6 +1393,106 @@ namespace IOT_APP
 
                 if (MeasurementLabel != null)
                     MeasurementLabel.Text = $"[PRESSURE] Raw: {rawValue} | Voltage: {voltage:F2}V (Updated: {timestamp})";
+            });
+        }
+
+        // Mock Data Generation Methods
+        private void GenerateMockFootData()
+        {
+            Random random = new();
+
+            // Generate a realistic foot length between 200-280mm (roughly US sizes 5-13)
+            double mockFootLength = 200 + random.NextDouble() * 80;
+
+            // Simulate measurement progress
+            DispatcherQueue.TryEnqueue(() =>
+            {
+                FootResultLabel.Text = "Scanning foot... (MOCK MODE)";
+                MeasurementLabel.Text = $"Processing foot measurement...";
+            });
+
+            // Simulate processing delay
+            System.Threading.Thread.Sleep(1500);
+
+            // Process the mock measurement
+            DispatcherQueue.TryEnqueue(() =>
+            {
+                ProcessFootMeasurement(mockFootLength.ToString("F1"));
+                MeasurementLabel.Text = $"✓ Mock Scan Complete: {mockFootLength:F1} mm";
+            });
+        }
+
+        private void GenerateMockPressureData()
+        {
+            Random random = new();
+            int mockPressureRaw = random.Next(200, 800); // Realistic pressure range
+            float mockVoltage = (mockPressureRaw / 1023f) * 5f; // Convert ADC to voltage
+
+            DispatcherQueue.TryEnqueue(() =>
+            {
+                UpdatePressureMonitor(mockPressureRaw, mockVoltage);
+            });
+        }
+
+        private void GenerateMockUltrasonicData()
+        {
+            Random random = new();
+            int mockDistance = random.Next(5, 400); // 5-400 cm range
+
+            DispatcherQueue.TryEnqueue(() =>
+            {
+                UpdateUltrasonicMonitor(mockDistance);
+            });
+        }
+
+        private void GenerateMockLimitSwitchData()
+        {
+            Random random = new();
+            bool mockTriggered = random.Next(0, 2) == 0; // Random true/false
+
+            DispatcherQueue.TryEnqueue(() =>
+            {
+                UpdateLimitSwitchMonitor(mockTriggered);
+            });
+        }
+
+        private void GenerateMockMotorData()
+        {
+            Random random = new();
+            int mockMotorSpeed = random.Next(0, 256); // 0-255 PWM
+
+            DispatcherQueue.TryEnqueue(() =>
+            {
+                string timestamp = DateTime.Now.ToString("HH:mm:ss");
+                MeasurementLabel.Text = $"[MOCK MOTOR] Speed: {mockMotorSpeed} PWM (Updated: {timestamp})";
+            });
+        }
+
+        // Generate all mock sensor data
+        public void GenerateAllMockSensorData()
+        {
+            System.Threading.Tasks.Task.Run(() =>
+            {
+                try
+                {
+                    GenerateMockPressureData();
+                    System.Threading.Thread.Sleep(500);
+
+                    GenerateMockUltrasonicData();
+                    System.Threading.Thread.Sleep(500);
+
+                    GenerateMockLimitSwitchData();
+                    System.Threading.Thread.Sleep(500);
+
+                    GenerateMockMotorData();
+                }
+                catch (Exception ex)
+                {
+                    DispatcherQueue.TryEnqueue(() =>
+                    {
+                        MeasurementLabel.Text = $"Mock Data Error: {ex.Message}";
+                    });
+                }
             });
         }
     }
