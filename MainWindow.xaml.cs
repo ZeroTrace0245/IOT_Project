@@ -61,17 +61,23 @@ namespace IOT_APP
 
         // Sensor Detection System
         private ObservableCollection<string> _sensorDetectionLogCollection = new();
+        private ObservableCollection<string> _sensorConsoleCollection = new();
         private Dictionary<string, bool> _sensorStatus = new()
         {
             { "LimitSwitch", false },
             { "MotorPWM", false },
             { "Stepper", false },
             { "Pressure", false },
-            { "DHT22", false }
+            { "Ultrasonic", false },
+            { "Obstacle", false }
         };
+        private Dictionary<string, string> _sensorReadings = new();
         private int _connectedSensorCount = 0;
         private DateTime _lastHandshakeTime;
         private long _handshakeDuration = 0;
+        private System.Threading.ManualResetEvent _sensorResponseWaitHandle = new(false);
+        private string _lastSensorResponse = "";
+        private bool _waitingForSensorResponse = false;
 
         public MainWindow()
         {
@@ -272,6 +278,14 @@ namespace IOT_APP
                 while (SerialOutputLog.Count > 500)
                 {
                     SerialOutputLog.RemoveAt(SerialOutputLog.Count - 1);
+                }
+
+                // If waiting for sensor response during detection, capture it
+                if (_waitingForSensorResponse)
+                {
+                    _lastSensorResponse = rawData;
+                    _sensorResponseWaitHandle.Set();
+                    AddSensorConsoleLog($"<< Response: {rawData}");
                 }
 
                 // Process limit switch data if monitoring
@@ -1054,70 +1068,198 @@ namespace IOT_APP
 
         private void InitializeSensorDetectionUI()
         {
-            _sensorDetectionLogCollection.Clear();
-            _sensorDetectionLogCollection.Insert(0, "[Sensor Detection System Ready]");
-            _sensorDetectionLogCollection.Insert(0, "[Click 'Start Handshake' to begin]");
+            _sensorConsoleCollection.Clear();
+            _sensorConsoleCollection.Insert(0, "[System Ready] Click 'Start Handshake' to begin sensor detection");
+        }
+
+        private void AddSensorConsoleLog(string message)
+        {
+            string timestamp = DateTime.Now.ToString("HH:mm:ss");
+            DispatcherQueue.TryEnqueue(() =>
+            {
+                if (_sensorConsoleCollection != null)
+                {
+                    _sensorConsoleCollection.Insert(0, $"[{timestamp}] {message}");
+                    if (_sensorConsoleCollection.Count > 200)
+                    {
+                        _sensorConsoleCollection.RemoveAt(_sensorConsoleCollection.Count - 1);
+                    }
+                }
+            });
+        }
+
+        private void ClearSensorConsole_Click(object sender, RoutedEventArgs e)
+        {
+            _sensorConsoleCollection.Clear();
+            AddSensorConsoleLog("[Console Cleared]");
         }
 
         private void StartSensorDetection_Click(object sender, RoutedEventArgs e)
         {
-            _lastHandshakeTime = DateTime.Now;
-            _connectedSensorCount = 0;
-
-            _sensorDetectionLogCollection.Clear();
-            _sensorDetectionLogCollection.Insert(0, "[STARTUP] Starting sensor detection handshake...");
-
-            // Detect Limit Switch (Pin 4)
-            _sensorDetectionLogCollection.Insert(0, "[HANDSHAKE] Sensor 1/5 - Limit Switch:");
-            _sensorDetectionLogCollection.Insert(0, "  → Sending digital test pulse on Pin 4");
-            bool limitSwitchDetected = DetectSensor("LimitSwitch");
-            _sensorDetectionLogCollection.Insert(0, limitSwitchDetected ? "  ✓ Response received!" : "  ✗ No response (timeout)");
-
-            // Detect Motor PWM (Pin 8)
-            _sensorDetectionLogCollection.Insert(0, "[HANDSHAKE] Sensor 2/5 - Motor PWM:");
-            _sensorDetectionLogCollection.Insert(0, "  → Testing analog sensor response...");
-            bool motorDetected = DetectSensor("MotorPWM");
-            _sensorDetectionLogCollection.Insert(0, motorDetected ? "  ✓ Response received!" : "  ✗ No response (timeout)");
-
-            // Detect Stepper (Pin 3)
-            _sensorDetectionLogCollection.Insert(0, "[HANDSHAKE] Sensor 3/5 - Stepper Motor:");
-            _sensorDetectionLogCollection.Insert(0, "  → Sending step pulse on Pin 3");
-            bool stepperDetected = DetectSensor("Stepper");
-            _sensorDetectionLogCollection.Insert(0, stepperDetected ? "  ✓ Response received!" : "  ✗ No response (timeout)");
-
-            // Detect Pressure Sensor (I2C)
-            _sensorDetectionLogCollection.Insert(0, "[HANDSHAKE] Sensor 4/5 - Pressure Sensor:");
-            _sensorDetectionLogCollection.Insert(0, "  → Probing I2C address 0x76");
-            bool pressureDetected = DetectSensor("Pressure");
-            _sensorDetectionLogCollection.Insert(0, pressureDetected ? "  → Device found at 0x76" : "  → No device at 0x76");
-
-            // Calculate handshake duration
-            _handshakeDuration = (long)(DateTime.Now - _lastHandshakeTime).TotalMilliseconds;
-            _sensorDetectionLogCollection.Insert(0, $"\n[REPORT] Handshake Complete ({_handshakeDuration}ms)");
-            _sensorDetectionLogCollection.Insert(0, $"[REPORT] Connected: {_connectedSensorCount}/5 sensors");
-        }
-
-        private bool DetectSensor(string sensorType)
-        {
-            if (!_sensorStatus.ContainsKey(sensorType))
+            if (_serialPort == null || !_serialPort.IsOpen)
             {
-                _sensorStatus[sensorType] = false;
-                return false;
+                AddSensorConsoleLog("❌ ERROR: Arduino not connected!");
+                MeasurementLabel.Text = "Connect Arduino first!";
+                return;
             }
 
-            // Simulate detection (in real system, would check Arduino response)
-            bool detected = _serialPort?.IsOpen ?? false;
-            _sensorStatus[sensorType] = detected;
+            _lastHandshakeTime = DateTime.Now;
+            _connectedSensorCount = 0;
+            _sensorReadings.Clear();
 
-            if (detected)
-                _connectedSensorCount++;
+            _sensorConsoleCollection.Clear();
+            AddSensorConsoleLog("🔄 Starting sensor detection handshake...");
 
-            return detected;
+            // Run detection in background thread to avoid blocking UI
+            System.Threading.Tasks.Task.Run(async () =>
+            {
+                try
+                {
+                    // Detect Limit Switch (Pin 4)
+                    await DetectSensorAsync("LimitSwitch", "LIMIT_CHECK", "LIMIT_STATE=");
+
+                    // Detect Obstacle Sensor (Pin 3)
+                    await DetectSensorAsync("Obstacle", "OBSTACLE_CHECK", "OBSTACLE_STATE=");
+
+                    // Detect Ultrasonic Sensor
+                    await DetectSensorAsync("Ultrasonic", "ULTRASONIC_READ", "ULTRASONIC_DISTANCE=");
+
+                    // Detect Pressure Sensor (A0)
+                    await DetectSensorAsync("Pressure", "PRESSURE_READ", "PRESSURE_RAW=");
+
+                    // Calculate handshake duration
+                    _handshakeDuration = (long)(DateTime.Now - _lastHandshakeTime).TotalMilliseconds;
+
+                    DispatcherQueue.TryEnqueue(() =>
+                    {
+                        AddSensorConsoleLog($"✓ Handshake Complete ({_handshakeDuration}ms)");
+                        AddSensorConsoleLog($"📊 Connected: {_connectedSensorCount}/4 sensors");
+
+                        if (ConnectedSensorCount != null)
+                            ConnectedSensorCount.Text = $"{_connectedSensorCount}/4";
+
+                        if (HandshakeTimeText != null)
+                            HandshakeTimeText.Text = $"{_handshakeDuration}ms";
+
+                        if (SystemStatusText != null)
+                            SystemStatusText.Text = "Complete";
+
+                        if (LastCheckText != null)
+                            LastCheckText.Text = DateTime.Now.ToString("HH:mm:ss");
+
+                        if (SensorProgressBar != null)
+                            SensorProgressBar.Value = _connectedSensorCount;
+
+                        MeasurementLabel.Text = $"Sensor detection complete: {_connectedSensorCount}/4 sensors found";
+                    });
+                }
+                catch (Exception ex)
+                {
+                    AddSensorConsoleLog($"❌ Detection Error: {ex.Message}");
+                    MeasurementLabel.Text = $"Error: {ex.Message}";
+                }
+            });
         }
+
+        private async System.Threading.Tasks.Task DetectSensorAsync(string sensorName, string command, string responsePrefix)
+        {
+            AddSensorConsoleLog($"▶ Sensor {sensorName}: Sending '{command}'");
+
+            _waitingForSensorResponse = false;
+            _lastSensorResponse = "";
+            _sensorResponseWaitHandle.Reset();
+
+            WriteToSerial(command);
+            _waitingForSensorResponse = true;
+
+            // Wait for response with 2-second timeout
+            bool responseReceived = _sensorResponseWaitHandle.WaitOne(2000);
+
+            if (responseReceived && !string.IsNullOrEmpty(_lastSensorResponse))
+            {
+                if (_lastSensorResponse.StartsWith(responsePrefix))
+                {
+                    _sensorStatus[sensorName] = true;
+                    _connectedSensorCount++;
+                    string value = _lastSensorResponse.Replace(responsePrefix, "").Trim();
+                    _sensorReadings[sensorName] = value;
+                    AddSensorConsoleLog($"✓ {sensorName} DETECTED - Value: {value}");
+
+                    // Update sensor card UI
+                    UpdateSensorCardUI(sensorName, value);
+                }
+                else
+                {
+                    _sensorStatus[sensorName] = false;
+                    AddSensorConsoleLog($"⚠ {sensorName}: Unexpected response: {_lastSensorResponse}");
+                }
+            }
+            else
+            {
+                _sensorStatus[sensorName] = false;
+                AddSensorConsoleLog($"✗ {sensorName}: No response (timeout)");
+            }
+
+            _waitingForSensorResponse = false;
+            await System.Threading.Tasks.Task.Delay(300); // Brief delay between sensor probes
+        }
+
+        private void UpdateSensorCardUI(string sensorName, string value)
+        {
+            DispatcherQueue.TryEnqueue(() =>
+            {
+                try
+                {
+                    switch (sensorName)
+                    {
+                        case "LimitSwitch":
+                            if (LimitSwitchSensorStatus != null)
+                                LimitSwitchSensorStatus.Text = "✓ DETECTED";
+                            if (LimitSwitchState != null)
+                                LimitSwitchState.Text = value;
+                            break;
+
+                        case "Obstacle":
+                            if (HW201SensorStatus != null)
+                                HW201SensorStatus.Text = "✓ DETECTED";
+                            if (HW201Detection != null)
+                                HW201Detection.Text = value == "0" ? "🚫 OBSTACLE DETECTED" : "✓ CLEAR";
+                            break;
+
+                        case "Ultrasonic":
+                            if (UltrasonicSensorStatus != null)
+                                UltrasonicSensorStatus.Text = "✓ DETECTED";
+                            if (UltrasonicDistanceSensorDetection != null)
+                                UltrasonicDistanceSensorDetection.Text = $"{value} cm";
+                            break;
+
+                        case "Pressure":
+                            if (PressureSensorStatus != null)
+                                PressureSensorStatus.Text = "✓ DETECTED";
+                            if (PressureRawValue != null)
+                                PressureRawValue.Text = value;
+                            // Calculate voltage (assuming 0-1023 maps to 0-5V)
+                            if (int.TryParse(value, out int rawVal))
+                            {
+                                float voltage = (rawVal / 1023f) * 5f;
+                                if (PressureVoltageValue != null)
+                                    PressureVoltageValue.Text = $"{voltage:F2}V";
+                            }
+                            break;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Error updating sensor UI: {ex.Message}");
+                }
+            });
+        }
+
+
 
         private void ValidateSensors_Click(object sender, RoutedEventArgs e)
         {
-            _sensorDetectionLogCollection.Insert(0, "[VALIDATION] Validating sensor responses...");
+            AddSensorConsoleLog("🔍 Validating connected sensors...");
 
             int validatedCount = 0;
             foreach (var sensor in _sensorStatus)
@@ -1125,20 +1267,21 @@ namespace IOT_APP
                 if (sensor.Value)
                 {
                     validatedCount++;
-                    _sensorDetectionLogCollection.Insert(0, $"[VALIDATION] ✓ {sensor.Key}: CONNECTED");
+                    AddSensorConsoleLog($"✓ {sensor.Key}: CONNECTED");
                 }
                 else
                 {
-                    _sensorDetectionLogCollection.Insert(0, $"[VALIDATION] ✗ {sensor.Key}: NOT CONNECTED");
+                    AddSensorConsoleLog($"✗ {sensor.Key}: NOT CONNECTED");
                 }
             }
 
-            _sensorDetectionLogCollection.Insert(0, $"\n[VALIDATION] {validatedCount} sensor(s) validated");
+            AddSensorConsoleLog($"📊 Validation Complete: {validatedCount} sensor(s) connected");
         }
 
         private void ResetDetection_Click(object sender, RoutedEventArgs e)
         {
-            _sensorDetectionLogCollection.Clear();
+            _sensorConsoleCollection.Clear();
+            _sensorReadings.Clear();
             _connectedSensorCount = 0;
             _sensorStatus = new Dictionary<string, bool>
             {
@@ -1146,21 +1289,46 @@ namespace IOT_APP
                 { "MotorPWM", false },
                 { "Stepper", false },
                 { "Pressure", false },
-                { "DHT22", false }
+                { "Ultrasonic", false },
+                { "Obstacle", false }
             };
 
-            _sensorDetectionLogCollection.Insert(0, "[RESET] Detection system reset");
-            _sensorDetectionLogCollection.Insert(0, "[READY] Ready for new handshake");
+            AddSensorConsoleLog("[Reset] Detection system reset");
+            AddSensorConsoleLog("[Ready] Ready for new handshake");
+
+            DispatcherQueue.TryEnqueue(() =>
+            {
+                if (ConnectedSensorCount != null)
+                    ConnectedSensorCount.Text = "0/4";
+                if (SystemStatusText != null)
+                    SystemStatusText.Text = "Idle";
+                if (SensorProgressBar != null)
+                    SensorProgressBar.Value = 0;
+
+                // Reset sensor status displays
+                if (LimitSwitchSensorStatus != null) LimitSwitchSensorStatus.Text = "Detecting...";
+                if (UltrasonicSensorStatus != null) UltrasonicSensorStatus.Text = "Detecting...";
+                if (HW201SensorStatus != null) HW201SensorStatus.Text = "Detecting...";
+                if (PressureSensorStatus != null) PressureSensorStatus.Text = "Detecting...";
+
+                if (LimitSwitchState != null) LimitSwitchState.Text = "---";
+                if (UltrasonicDistanceSensorDetection != null) UltrasonicDistanceSensorDetection.Text = "--- cm";
+                if (HW201Detection != null) HW201Detection.Text = "---";
+                if (PressureRawValue != null) PressureRawValue.Text = "---";
+                if (PressureVoltageValue != null) PressureVoltageValue.Text = "---";
+            });
         }
 
         private void SensorHelp_Click(object sender, RoutedEventArgs e)
         {
-            _sensorDetectionLogCollection.Insert(0, "\n[HELP] Sensor Detection System Guide:");
-            _sensorDetectionLogCollection.Insert(0, "1. Click 'Start Handshake' to detect connected sensors");
-            _sensorDetectionLogCollection.Insert(0, "2. System probes each sensor for a response");
-            _sensorDetectionLogCollection.Insert(0, "3. Results show ✓ for connected or ❌ for missing");
-            _sensorDetectionLogCollection.Insert(0, "4. Use 'Validate Sensors' to verify active sensors");
-            _sensorDetectionLogCollection.Insert(0, "5. Status updates every 5 seconds automatically");
+            AddSensorConsoleLog("\n📋 SENSOR DETECTION GUIDE:");
+            AddSensorConsoleLog("1. Connect Arduino with all sensors attached");
+            AddSensorConsoleLog("2. Click 'Start Handshake' to probe each sensor");
+            AddSensorConsoleLog("3. System sends commands: LIMIT_CHECK, OBSTACLE_CHECK, ULTRASONIC_READ, PRESSURE_READ");
+            AddSensorConsoleLog("4. ✓ = Sensor detected and responding");
+            AddSensorConsoleLog("5. ✗ = Sensor not detected (check connections)");
+            AddSensorConsoleLog("6. Use 'Validate Sensors' to verify all responses");
+            AddSensorConsoleLog("7. Check Serial Console for detailed responses");
         }
 
         // Arduino Control Panel Event Handlers
